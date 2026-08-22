@@ -3,12 +3,11 @@
 Usage:
     surprise-plan                           # Interactive mode
     surprise-plan "AI, 音乐, 摄影"          # Direct mode
-    surprise-plan --demo "AI, 音乐, 摄影"   # Demo mode (no API key)
-    surprise-plan --animation lightning      # Direct mode with animation
+    surprise-plan main --demo "AI, 音乐, 摄影"   # Demo mode (no API key)
+    surprise-plan main --animation lightning      # Direct mode with animation
     surprise-plan config set                # Configure API settings
     surprise-plan config show               # Show current config
     surprise-plan config clear              # Clear saved config
-    surprise-plan --list-domains            # Show all domains
 """
 
 import os
@@ -59,10 +58,18 @@ app.add_typer(config_app, name="config")
 # ─── Default callback: interactive mode when no subcommand ──
 
 @app.callback(invoke_without_command=True)
-def default(ctx: typer.Context):
+def default(
+    ctx: typer.Context,
+    list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
+    list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
+):
     """Default entry point: interactive mode when no subcommand given."""
     if ctx.invoked_subcommand is not None:
         return
+    if list_domains:
+        show_list_domains()
+    if list_animations:
+        show_list_animations()
     _interactive()
 
 

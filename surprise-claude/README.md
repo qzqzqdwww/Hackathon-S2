@@ -31,7 +31,7 @@ git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-claude
 
 # 2. Install
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Usage
@@ -110,25 +110,32 @@ $ surprise-claude "AI, 音乐, 摄影"
 
 [SEARCH] 为什么学这个
 ┌──────────────────────────────────────────────┐
-│ 养蜂是自然界最精密的分布式系统...              │
+│ 养蜂是自然界最精密的分布式系统。一个蜂群由上 │
+│ 万只蜜蜂组成，却没有任何中央控制——它们通过  │
+│ "摇摆舞"传递信息，通过信息素协调行动。如果你 │
+│ 对AI感兴趣，你会惊叹于这套没有算法的智能；如 │
+│ 果你对音乐感兴趣，你会发现蜂群振翅的频率本身 │
+│ 就是一首交响乐。                              │
 └──────────────────────────────────────────────┘
 
 [BRIDGE] 与你兴趣的意外关联
   -> 养蜂的"摇摆舞"通信协议是自然界最原始的舞蹈形式
   -> 微距摄影技巧可以直接迁移到蜂巢内部拍摄
-  -> AI 蜂群算法启发着分布式计算...
+  -> AI 蜂群算法（Swarm Intelligence）正是受此启发
 
 [MAP] 四周学习路径
 ┌──────────────────────────────────────────────┐
 │ 第 1 周：蜂巢的社会结构与蜜蜂语言             │
-│   - 阅读《The Honey Bee》...                  │
-│   - 观看蜜蜂摇摆舞纪录片...                   │
+│   - 阅读《The Honey Bee》前3章               │
+│   - 观看蜜蜂摇摆舞纪录片                      │
 │   - 画出蜂群信息传递流程图                    │
 └──────────────────────────────────────────────┘
 
 [SPARK] 意外之喜
 ┌──────────────────────────────────────────────┐
-│ 当你用摄影师的眼光观察蜂巢，用算法工程师...   │
+│ 当你用摄影师的眼光观察蜂巢，用算法工程师的思  │
+│ 维理解蜂群，养蜂就不再是农业——它是一种你从未 │
+│ 想过的、融合了艺术与科技的活体实验。          │
 └──────────────────────────────────────────────┘
 ```
 
@@ -184,14 +191,36 @@ Surprise Claude 是一个**终端原生**的 CLI 工具，专门用来打破你�
 ### 快速开始
 
 ```bash
-# 1. 安装
+# 方式一：直接安装（需要 git）
 pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
 
-# 2. 设置 API Key
-export ANTHROPIC_API_KEY="sk-ant-..."
+# 方式二：克隆后安装
+git clone https://github.com/qzqzqdwww/Hackathon-S2.git
+cd Hackathon-S2/surprise-claude
+pip install -e .
+```
 
-# 3. 运行
+### 设置 API Key
+
+```bash
+# Windows PowerShell
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# macOS / Linux
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+### 运行
+
+```bash
+# 交互模式（推荐）
 surprise-claude
+
+# 直接输入兴趣领域
+surprise-claude "AI, 音乐, 摄影"
+
+# 演示模式（无需 API Key）
+surprise-claude --demo "AI, 音乐, 摄影"
 ```
 
 ### 使用方法

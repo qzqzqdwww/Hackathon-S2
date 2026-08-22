@@ -35,8 +35,6 @@ from .display import (
     play_animation,
     display_plan,
     clear_screen,
-    print_centered,
-    GREEN, RED, YELLOW, RESET, BOLD, DIM,
 )
 from .backend.domain_picker import DOMAINS, pick_domain
 from .backend.provider import generate_plan, get_current_provider
@@ -57,8 +55,8 @@ app = typer.Typer(
 def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False):
     """Animation -> domain pick -> API call -> display plan."""
     if not interests:
-        console.print("[red]错误：请至少提供一个兴趣领域。[reset]")
-        console.print("[green]示例: surprise-claude \"AI, 音乐, 摄影\"[reset]")
+        console.print("[red]错误：请至少提供一个兴趣领域。[/red]")
+        console.print("[green]示例: surprise-claude \"AI, 音乐, 摄影\"[/green]")
         raise typer.Exit(1)
 
     provider = get_current_provider()
@@ -71,20 +69,20 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
 
     if not regenerate:
         clear_screen()
-        print_centered("[TARGET] Surprise Claude", color=BOLD + YELLOW)
-        print_centered("打破算法茧房 · 制造意外", color=DIM)
+        console.print("[bold yellow][TARGET] Surprise Claude[/bold yellow]")
+        console.print("[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
-        print_centered(f"你的兴趣: {', '.join(interests)}", color=GREEN)
+        console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
         console.print()
-        print_centered(f"AI 引擎: {provider}", color=DIM)
-        print_centered("即将为你随机揭示一个陌生领域...", color=YELLOW)
+        console.print(f"[dim]AI 引擎: {provider}[/dim]")
+        console.print("[yellow]即将为你随机揭示一个陌生领域...[/yellow]")
         console.print()
         time.sleep(0.8)
 
     play_animation(animation, speed)
     time.sleep(0.3)
 
-    console.print(f"\n{BOLD}{YELLOW}正在生成学习 PLAN...{RESET}\n")
+    console.print(f"\n[bold yellow]正在生成学习 PLAN...[/bold yellow]\n")
 
     try:
         if demo_mode:
@@ -92,22 +90,22 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         else:
             plan = generate_plan(interests, pick["domain"])
     except EnvironmentError as e:
-        console.print(f"[red]{e}[reset]")
+        console.print(f"[red]{e}[/red]")
         console.print()
-        console.print(f"[dim]查看配置: surprise-claude config show[reset]")
-        console.print(f"[green]设置 API:  surprise-claude config set[reset]")
+        console.print(f"[dim]查看配置: surprise-claude config show[/dim]")
+        console.print(f"[green]设置 API:  surprise-claude config set[/green]")
         raise typer.Exit(1)
     except Exception as e:
         msg = str(e)
         if "403" in msg or "forbidden" in msg.lower() or "401" in msg:
-            console.print(f"[red]API 调用失败（认证失败）— [{provider}][reset]")
+            console.print(f"[red]API 调用失败（认证失败）— [{provider}][/red]")
             console.print("  1. API Key 无效或已过期")
             console.print("  2. 账号未开通 API 访问权限")
             console.print("  3. 账号余额不足")
             console.print()
-            console.print(f"[dim]运行 surprise-claude config set 更新 Key[reset]")
+            console.print(f"[dim]运行 surprise-claude config set 更新 Key[/dim]")
         else:
-            console.print(f"[red]生成失败: {e}[reset]")
+            console.print(f"[red]生成失败: {e}[/red]")
         raise typer.Exit(1)
 
     display_plan({
@@ -122,29 +120,29 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
 
 def show_help():
     clear_screen()
-    console.print(f"\n{BOLD}{YELLOW}[TARGET] Surprise Claude[reset]")
-    console.print(f"{DIM}打破算法茧房 · 随机学习计划生成器[reset]")
-    console.print(f"{DIM}大工黑客松 S2 — Track 03 · 开放原子[reset]\n")
-    console.print(f"\n{BOLD}用法:[reset]")
-    console.print(f"  {GREEN}surprise-claude[reset]                       交互模式")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}<兴趣>[reset]              直接生成（逗号分隔）")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config set[reset]          设置 API 配置")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config show[reset]          查看当前配置")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config clear[reset]         清除配置")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--demo[reset]              演示模式")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--list-domains[reset]       列出领域池")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--list-animations[reset]    列出动画样式")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--help[reset]              显示此帮助")
-    console.print(f"\n{BOLD}动画样式:[reset]  default / lightning / chain / laser")
-    console.print(f"\n{BOLD}AI 引擎:[reset]   Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等")
-    console.print(f"            [dim]运行 config set 配置[reset]")
+    console.print(f"\n[bold yellow][TARGET] Surprise Claude[/bold yellow]")
+    console.print(f"[dim]打破算法茧房 · 随机学习计划生成器[/dim]")
+    console.print(f"[dim]大工黑客松 S2 — Track 03 · 开放原子[/dim]\n")
+    console.print(f"\n[bold]用法:[/bold]")
+    console.print(f"  [green]surprise-claude[/green]                       交互模式")
+    console.print(f"  [green]surprise-claude[/green] [yellow]<兴趣>[/yellow]              直接生成（逗号分隔）")
+    console.print(f"  [green]surprise-claude[/green] [yellow]config set[/yellow]          设置 API 配置")
+    console.print(f"  [green]surprise-claude[/green] [yellow]config show[/yellow]          查看当前配置")
+    console.print(f"  [green]surprise-claude[/green] [yellow]config clear[/yellow]         清除配置")
+    console.print(f"  [green]surprise-claude[/green] [yellow]--demo[/yellow]              演示模式")
+    console.print(f"  [green]surprise-claude[/green] [yellow]--list-domains[/yellow]       列出领域池")
+    console.print(f"  [green]surprise-claude[/green] [yellow]--list-animations[/yellow]    列出动画样式")
+    console.print(f"  [green]surprise-claude[/green] [yellow]--help[/yellow]              显示此帮助")
+    console.print(f"\n[bold]动画样式:[/bold]  default / lightning / chain / laser")
+    console.print(f"\n[bold]AI 引擎:[/bold]   Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等")
+    console.print(f"            [dim]运行 config set 配置[/dim]")
     console.print()
     raise typer.Exit()
 
 
 def show_list_domains():
     clear_screen()
-    console.print(f"\n{BOLD}{YELLOW}[BOOK] 领域池 ({len(DOMAINS)} 个可选领域)[reset]\n")
+    console.print(f"\n[bold yellow][BOOK] 领域池 ({len(DOMAINS)} 个可选领域)[/bold yellow]\n")
     categories = {
         "工艺与制作": ["陶艺", "折纸", "皮革", "面具", "微缩", "绳结", "琥珀", "玻璃", "制琴"],
         "自然世界": ["养蜂", "真菌", "鸟类", "火山", "化石", "樱花", "海洋", "树木"],
@@ -160,23 +158,23 @@ def show_list_domains():
         for d in matched:
             assigned[d] = True
         if matched:
-            console.print(f"  {BOLD}{cat}[reset]")
+            console.print(f"  [bold]{cat}[/bold]")
             for item in matched:
-                console.print(f"    {DIM}-[reset] {item}")
+                console.print(f"    [dim]-[/dim] {item}")
             console.print()
     raise typer.Exit()
 
 
 def show_list_animations():
     clear_screen()
-    console.print(f"\n{BOLD}{YELLOW}[ART] 可用动画样式[reset]\n")
+    console.print(f"\n[bold yellow][ART] 可用动画样式[/bold yellow]\n")
     for name, desc in [
         ("default", "藤条（经典鞭挞 + 金色粒子爆发）"),
         ("lightning", "闪电（红色电流 + 瞬间打击）"),
         ("chain", "链条（金属质感 + 沉稳打击）"),
         ("laser", "激光（瞄准 + 瞬间命中 + 残影）"),
     ]:
-        console.print(f"  {GREEN}{name:<12}[reset] {desc}")
+        console.print(f"  [green]{name:<12}[/green] {desc}")
     console.print()
     raise typer.Exit()
 
@@ -215,7 +213,7 @@ def config_set(
         cfg["model"] = model
 
     save_config(cfg)
-    console.print(f"\n[green]配置已保存！[reset]")
+    console.print(f"\n[green]配置已保存！[/green]")
     _print_config()
 
 
@@ -224,8 +222,8 @@ def config_show():
     """显示当前 API 配置"""
     from .backend.provider import get_config_summary
     s = get_config_summary()
-    console.print(f"\n{BOLD}{YELLOW}[CONFIG] 当前 API 配置[reset]\n")
-    console.print(f"  引擎:     [green]{s['provider']}[reset]")
+    console.print(f"\n[bold yellow][CONFIG] 当前 API 配置[/bold yellow]\n")
+    console.print(f"  引擎:     [green]{s['provider']}[/green]")
     console.print(f"  API Key:  {s['api_key']}")
     console.print(f"  API 地址: {s['base_url']}")
     console.print(f"  模型:     {s['model']}")
@@ -237,7 +235,7 @@ def config_show():
 def config_clear():
     """清除保存的 API 配置"""
     if not typer.confirm("确定要清除所有保存的 API 配置吗？"):
-        console.print(f"\n{DIM}已取消。[reset]")
+        console.print(f"\n[dim]已取消。[/dim]")
         raise typer.Exit(0)
     clear_config()
     console.print(f"\n[green]配置已清除。[reset]")
@@ -246,33 +244,33 @@ def config_clear():
 def _config_wizard():
     """Interactive config setup."""
     clear_screen()
-    console.print(f"\n{BOLD}{YELLOW}[CONFIG] API 配置向导[reset]\n")
+    console.print(f"\n[bold yellow][CONFIG] API 配置向导[/bold yellow]\n")
 
     names = list(KNOWN_PROVIDERS.keys())
-    console.print(f"\n{BOLD}选择 AI 引擎:[reset]\n")
+    console.print(f"\n[bold]选择 AI 引擎:[/bold]\n")
     for i, name in enumerate(names, 1):
         k = KNOWN_PROVIDERS[name]
-        console.print(f"  [green]{i}[reset]. [bold]{name}[reset]  (默认: {k['model']})")
-    console.print(f"  [green]{len(names)+1}[reset]. [bold]custom[reset]  (自定义 OpenAI 兼容 API)")
+        console.print(f"  [green]{i}[/green]. [bold]{name}[/bold]  (默认: {k['model']})")
+    console.print(f"  [green]{len(names)+1}[/green]. [bold]custom[/bold]  (自定义 OpenAI 兼容 API)")
 
-    choice = Prompt.ask(f"\n{YELLOW}选择引擎[reset]（序号或名称）", default="anthropic")
+    choice = Prompt.ask(f"\n[yellow]选择引擎[/yellow]（序号或名称）", default="anthropic")
     provider = _parse_provider_choice(choice, names)
 
     known = get_provider_config(provider)
     cfg = {"provider": provider}
 
     key_hint = f"（{known['key_env']}）" if known["key_env"] != "API_KEY" else ""
-    api_key = Prompt.ask(f"\n{GREEN}API Key[reset]{key_hint}", password=True)
+    api_key = Prompt.ask(f"\n[green]API Key[/green]{key_hint}", password=True)
     if api_key:
         cfg["api_key"] = api_key
 
     if provider != "anthropic":
-        cfg["base_url"] = Prompt.ask(f"\n{CYAN}API 地址[reset]", default=known["base_url"])
+        cfg["base_url"] = Prompt.ask(f"\n[cyan]API 地址[/cyan]", default=known["base_url"])
 
-    cfg["model"] = Prompt.ask(f"\n{YELLOW}模型名称[reset]", default=known["model"])
+    cfg["model"] = Prompt.ask(f"\n[yellow]模型名称[/yellow]", default=known["model"])
 
     save_config(cfg)
-    console.print(f"\n[green]配置已保存！[reset]")
+    console.print(f"\n[green]配置已保存！[/green]")
     _print_config()
 
 
@@ -294,7 +292,7 @@ def _parse_provider_choice(choice: str, names: list) -> str:
 def _print_config():
     from .backend.provider import get_config_summary
     s = get_config_summary()
-    console.print(f"\n  引擎: [green]{s['provider']}[reset]")
+    console.print(f"\n  引擎: [green]{s['provider']}[/green]")
     console.print(f"  Key:   {s['api_key']}")
     console.print(f"  地址: {s['base_url']}")
     console.print(f"  模型: {s['model']}\n")
@@ -376,12 +374,12 @@ def main(
 
     interest_list = [s.strip() for s in interests.replace("，", ",").split(",") if s.strip()]
     if not interest_list:
-        console.print("[red]错误：请提供有效的兴趣领域。[reset]")
+        console.print("[red]错误：请提供有效的兴趣领域。[/red]")
         raise typer.Exit(1)
 
     valid_anims = {"default", "lightning", "chain", "laser"}
     if animation not in valid_anims:
-        console.print(f"[red]未知动画: {animation}[reset]")
+        console.print(f"[red]未知动画: {animation}[/red]")
         console.print(f"可用: {', '.join(valid_anims)}")
         raise typer.Exit(1)
 
@@ -391,21 +389,21 @@ def main(
 def _interactive():
     """Interactive REPL mode."""
     clear_screen()
-    console.print(f"\n{BOLD}{YELLOW}[TARGET] Surprise Claude[reset]")
-    console.print(f"{DIM}打破算法茧房 · 随机学习计划生成器[reset]")
-    console.print(f"{DIM}输入你的兴趣领域，AI 会刻意避开它们[reset]")
-    console.print(f"{DIM}Enter 重新生成 · n 换动画 · s 设置 API · q 退出[reset]\n")
+    console.print(f"\n[bold yellow][TARGET] Surprise Claude[/bold yellow]")
+    console.print(f"[dim]打破算法茧房 · 随机学习计划生成器[/dim]")
+    console.print(f"[dim]输入你的兴趣领域，AI 会刻意避开它们[/dim]")
+    console.print(f"[dim]Enter 重新生成 · n 换动画 · s 设置 API · q 退出[/dim]\n")
 
     animation = "default"
-    raw = Prompt.ask(f"\n{GREEN}你的兴趣领域[reset]（逗号分隔）", default="")
+    raw = Prompt.ask(f"\n[green]你的兴趣领域[/green]（逗号分隔）", default="")
     if not raw or raw.lower() in ("q", "quit", "exit"):
-        console.print(f"\n{DIM}再见！[reset]")
+        console.print(f"\n[dim]再见！[/dim]")
         raise typer.Exit(0)
 
     interests = [s.strip() for s in raw.replace("，", ",").split(",") if s.strip()]
 
     anim_choice = Prompt.ask(
-        f"\n{YELLOW}动画样式[reset] (default / lightning / chain / laser)",
+        f"\n[yellow]动画样式[/yellow] (default / lightning / chain / laser)",
         default="default",
     )
     if anim_choice in {"default", "lightning", "chain", "laser"}:
@@ -416,20 +414,20 @@ def _interactive():
     while True:
         console.print()
         action = Prompt.ask(
-            f"{DIM}Enter 重新生成 · {YELLOW}n[reset]{DIM} 换动画 · {CYAN}s[reset]{DIM} 设置 API · {RED}q[reset]{DIM} 退出[reset]",
+            f"[dim]Enter 重新生成 · [yellow]n[/yellow][dim] 换动画 · [cyan]s[/cyan][dim] 设置 API · [red]q[/red][dim] 退出[/dim]",
             default="",
         ).strip().lower()
 
         if action in ("q", "quit", "exit"):
-            console.print(f"\n{DIM}再见！[reset]")
+            console.print(f"\n[dim]再见！[/dim]")
             raise typer.Exit(0)
         elif action == "c":
-            raw = Prompt.ask(f"\n{GREEN}新兴趣领域[reset]（逗号分隔）", default="")
+            raw = Prompt.ask(f"\n[green]新兴趣领域[/green]（逗号分隔）", default="")
             if raw and raw.lower() not in ("q", "quit", "exit"):
                 interests = [s.strip() for s in raw.replace("，", ",").split(",") if s.strip()]
         elif action == "n":
             anim_choice = Prompt.ask(
-                f"\n{YELLOW}动画样式[reset] (default / lightning / chain / laser)",
+                f"\n[yellow]动画样式[/yellow] (default / lightning / chain / laser)",
                 default=animation,
             )
             if anim_choice in {"default", "lightning", "chain", "laser"}:

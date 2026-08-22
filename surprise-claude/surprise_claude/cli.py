@@ -3,6 +3,8 @@
 Usage:
     surprise-claude                           # Interactive mode
     surprise-claude "AI, 音乐, 摄影"          # Direct mode
+    surprise-claude config set                # Configure API settings
+    surprise-claude config show               # Show current config
     surprise-claude --list-domains            # Show all domains
     surprise-claude --animation lightning     # Use lightning animation
 """
@@ -48,7 +50,11 @@ from .display import (
     SHOW_CURSOR,
 )
 from .backend.domain_picker import DOMAINS, pick_domain
-from .backend.plan_generator import generate_plan
+from .backend.provider import generate_plan, get_config_summary, get_current_provider
+from .backend.config import (
+    load_config, save_config, clear_config, get_provider_config,
+    KNOWN_PROVIDERS,
+)
 
 # Rich Console — colorama.init() already patches sys.stdout on Windows,
 # so Rich will write through colorama's ANSI-to-Win32 converter.
@@ -63,12 +69,14 @@ app = typer.Typer(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, provider: str = "anthropic"):
+def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False):
     """Core generation workflow: animation -> API call -> display plan."""
     if not interests:
         console.print("[red]错误：请至少提供一个兴趣领域。[reset]")
         console.print("[green]示例: surprise-claude \"AI, 音乐, 摄影\"[reset]")
         raise typer.Exit(1)
+
+    provider = get_current_provider()
 
     # Step 1: Pick a surprise domain
     try:
@@ -101,22 +109,17 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         if demo_mode:
             plan = _generate_demo_plan(interests, picked_domain)
         else:
-            os.environ.setdefault("LLM_PROVIDER", provider)
             plan = generate_plan(interests, picked_domain)
     except EnvironmentError as e:
         console.print(f"[red]{e}[reset]")
         console.print()
-        if provider == "openai":
-            console.print("[green]$env:OPENAI_API_KEY = \"sk-...\"[reset]")
-            console.print("[green]surprise-claude \"AI, 音乐\"[reset]")
-        else:
-            console.print("[green]$env:ANTHROPIC_API_KEY = \"sk-ant-...\"[reset]")
-            console.print("[green]surprise-claude \"AI, 音乐\"[reset]")
+        console.print(f"[dim]当前配置: surprise-claude config show[reset]")
+        console.print(f"[green]设置 API:  surprise-claude config set[reset]")
         raise typer.Exit(1)
     except Exception as e:
         error_msg = str(e)
-        if "403" in error_msg or "forbidden" in error_msg.lower():
-            console.print(f"[red]API 调用失败 (403 Forbidden) — [{provider}][reset]")
+        if "403" in error_msg or "forbidden" in error_msg.lower() or "401" in error_msg:
+            console.print(f"[red]API 调用失败（认证失败） — [{provider}][reset]")
             console.print()
             console.print("可能的原因:")
             console.print("  1. API Key 无效或已过期")
@@ -124,11 +127,8 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
             console.print("  3. 账号余额不足")
             console.print()
             console.print("请检查:")
-            if provider == "openai":
-                console.print("  - 前往 https://platform.openai.com/ 确认 key 状态")
-            else:
-                console.print("  - 前往 https://console.anthropic.com/ 确认 key 状态")
-            console.print(f"  - 确认账号有可用的 API 额度")
+            console.print(f"  - 运行 surprise-claude config show 查看当前配置")
+            console.print(f"  - 运行 surprise-claude config set 更新 API Key")
         else:
             console.print(f"[red]生成失败: {e}[reset]")
         raise typer.Exit(1)
@@ -153,7 +153,9 @@ def show_help():
     console.print(f"\n{BOLD}用法:[reset]")
     console.print(f"  {GREEN}surprise-claude[reset]                          交互模式（提示输入兴趣领域）")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}<兴趣>[reset]                 直接生成（逗号分隔）")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--provider <name>[reset]        AI 引擎（anthropic / openai）")
+    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config set[reset]               设置 API 配置（交互式）")
+    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config show[reset]              显示当前 API 配置")
+    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}config clear[reset]             清除 API 配置")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--animation <name>[reset]       选择鞭挞动画样式")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--speed <n>[reset]              动画速度倍率（默认 1.0）")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--demo[reset]                  演示模式（无需 API Key）")
@@ -212,14 +214,23 @@ def show_list_providers():
     """Show available AI providers."""
     clear_screen()
     console.print(f"\n{BOLD}{YELLOW}[AI] 可用 AI 引擎[reset]\n")
-    for name, desc, env_var, default_model in [
-        ("anthropic", "Claude API (Anthropic)", "ANTHROPIC_API_KEY", "claude-sonnet-4-20250514"),
-        ("openai", "OpenAI / compatible API", "OPENAI_API_KEY", "gpt-4o-mini"),
+    for name, desc, default_model in [
+        ("anthropic",    "Claude API（Anthropic）",              "claude-sonnet-4-20250514"),
+        ("openai",       "OpenAI API",                           "gpt-4o-mini"),
+        ("deepseek",     "DeepSeek（深度求索）",                 "deepseek-chat"),
+        ("zhipu",        "智谱 GLM",                             "glm-4-plus"),
+        ("stepfun",      "阶跃星辰 Step",                        "step-2-16k"),
+        ("doubao",       "火山引擎豆包",                         "doubao-pro-32k"),
+        ("siliconflow",  "硅基流动 SiliconFlow",                 "Qwen/Qwen2.5-72B-Instruct"),
+        ("custom",       "自定义 OpenAI 兼容 API",               "（自行指定）"),
     ]:
-        console.print(f"  {GREEN}{name:<12}[reset] {desc}")
-        console.print(f"  {DIM}            环境变量: {env_var}[reset]")
-        console.print(f"  {DIM}            默认模型: {default_model}[reset]\n")
-    console.print("[dim]切换: surprise-claude --provider openai \"你的兴趣\"[reset]")
+        known = KNOWN_PROVIDERS[name]
+        console.print(f"  [green]{name:<12}[reset] {desc}")
+        if known["base_url"]:
+            console.print(f"  [dim]            地址: {known['base_url']}[reset]")
+        console.print(f"  [dim]            默认模型: {default_model}[reset]")
+        console.print()
+    console.print("[dim]配置方式: surprise-claude config set[reset]")
     console.print()
     raise typer.Exit()
 
@@ -323,6 +334,153 @@ def _generate_demo_plan(interests: list, picked_domain: str) -> dict:
     return _DEMO_PLANS.get(picked_domain, _DEMO_PLANS["养蜂 (Beekeeping)"])
 
 
+# ─── Config Subcommand ────────────────────────────────────
+
+config_app = typer.Typer(
+    name="config",
+    help="管理 API 配置（支持任意 AI 引擎）",
+)
+app.add_typer(config_app, name="config")
+
+
+@config_app.command("set")
+def config_set(
+    provider: str = typer.Option(None, "--provider", "-p", help="AI 引擎名称"),
+    api_key: str = typer.Option(None, "--api-key", "-k", help="API Key"),
+    base_url: str = typer.Option(None, "--base-url", "-u", help="API 地址"),
+    model: str = typer.Option(None, "--model", "-m", help="模型名称"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="交互式设置"),
+):
+    """设置 API 配置（保存到 ~/.surprise-claude/config.json）"""
+    if interactive or not any([provider, api_key, base_url, model]):
+        _config_set_interactive()
+        return
+
+    existing = load_config()
+
+    if provider:
+        known = get_provider_config(provider)
+        existing["provider"] = provider
+        if not base_url:
+            base_url = known["base_url"]
+        if not model:
+            model = known["model"]
+
+    if api_key:
+        existing["api_key"] = api_key
+    if base_url:
+        existing["base_url"] = base_url
+    if model:
+        existing["model"] = model
+
+    save_config(existing)
+    console.print(f"\n[green]配置已保存！[reset]")
+    _print_config_summary()
+
+
+@config_app.command("show")
+def config_show():
+    """显示当前 API 配置"""
+    summary = get_config_summary()
+    console.print(f"\n{BOLD}{YELLOW}[CONFIG] 当前 API 配置[reset]\n")
+    console.print(f"  引擎:     [green]{summary['provider']}[reset]")
+    console.print(f"  API Key:  {summary['api_key']}")
+    console.print(f"  API 地址: {summary['base_url']}")
+    console.print(f"  模型:     {summary['model']}")
+    console.print(f"  配置文件: {summary['config_file']}")
+    console.print()
+
+
+@config_app.command("clear")
+def config_clear():
+    """清除保存的 API 配置"""
+    if not typer.confirm("确定要清除所有保存的 API 配置吗？"):
+        console.print(f"\n{DIM}已取消。[reset]")
+        raise typer.Exit(0)
+    clear_config()
+    console.print(f"\n[green]配置已清除。[reset]")
+
+
+def _config_set_interactive():
+    """Interactive config setup flow."""
+    clear_screen()
+    console.print(f"\n{BOLD}{YELLOW}[CONFIG] API 配置向导[reset]\n")
+
+    # Step 1: Choose provider
+    console.print(f"\n{BOLD}选择 AI 引擎:[reset]\n")
+    provider_names = list(KNOWN_PROVIDERS.keys())
+    for i, name in enumerate(provider_names, 1):
+        known = KNOWN_PROVIDERS[name]
+        console.print(f"  [green]{i}[reset]. [bold]{name}[reset]  (默认模型: {known['model']})")
+    console.print(f"  [green]{len(provider_names) + 1}[reset]. [bold]custom[reset]  (自定义 OpenAI 兼容 API)")
+
+    choice = Prompt.ask(
+        f"\n{YELLOW}选择引擎[reset]（输入序号或名称）",
+        default="anthropic",
+    )
+
+    provider = None
+    # Try as number first
+    try:
+        idx = int(choice.strip()) - 1
+        if 0 <= idx < len(provider_names):
+            provider = provider_names[idx]
+    except ValueError:
+        pass
+    if not provider:
+        # Try as name
+        choice_lower = choice.strip().lower()
+        if choice_lower in KNOWN_PROVIDERS:
+            provider = choice_lower
+        elif choice_lower == str(len(provider_names) + 1) or choice_lower == "custom":
+            provider = "custom"
+        else:
+            provider = "anthropic"
+
+    known = get_provider_config(provider)
+    config_data = {"provider": provider}
+
+    # Step 2: API Key
+    key_env_name = known["key_env"]
+    key_hint = f"（环境变量: {key_env_name}）" if key_env_name != "API_KEY" else ""
+    api_key = Prompt.ask(
+        f"\n{GREEN}API Key[reset]{key_hint}",
+        password=True,
+    )
+    if api_key:
+        config_data["api_key"] = api_key
+
+    # Step 3: Base URL (only for non-anthropic providers)
+    if provider != "anthropic":
+        default_url = known["base_url"]
+        base_url = Prompt.ask(
+            f"\n{CYAN}API 地址[reset]",
+            default=default_url,
+        )
+        config_data["base_url"] = base_url
+
+    # Step 4: Model
+    default_model = known["model"]
+    model = Prompt.ask(
+        f"\n{YELLOW}模型名称[reset]",
+        default=default_model,
+    )
+    config_data["model"] = model
+
+    save_config(config_data)
+    console.print(f"\n[green]配置已保存！[reset]")
+    _print_config_summary()
+
+
+def _print_config_summary():
+    summary = get_config_summary()
+    console.print(f"\n  [bold]引擎:[/bold] [green]{summary['provider']}[reset]")
+    console.print(f"  [bold]Key:[/bold]   {summary['api_key']}")
+    console.print(f"  [bold]地址:[/bold] {summary['base_url']}")
+    console.print(f"  [bold]模型:[/bold] {summary['model']}")
+    console.print()
+
+
 # ─── CLI Entry Point ───────────────────────────────────────
 
 @app.command()
@@ -333,7 +491,6 @@ def main(
     ),
     animation: str = typer.Option("default", "--animation", "-a", help="鞭挞动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
-    provider: str = typer.Option("anthropic", "--provider", "-p", help="AI 引擎: anthropic (Claude) 或 openai (GPT)"),
     list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
     list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
     list_providers: bool = typer.Option(False, "--list-providers", help="列出所有可用 AI 引擎"),
@@ -365,7 +522,7 @@ def main(
         console.print(f"可用动画: {', '.join(valid_animations)}")
         raise typer.Exit(1)
 
-    _run(interest_list, animation, speed, demo_mode=demo, provider=provider)
+    _run(interest_list, animation, speed, demo_mode=demo)
 
 
 def _interactive():
@@ -374,10 +531,9 @@ def _interactive():
     console.print(f"\n{BOLD}{YELLOW}[TARGET] Surprise Claude[reset]")
     console.print(f"{DIM}打破算法茧房 · 随机学习计划生成器[reset]")
     console.print(f"{DIM}输入你的兴趣领域，AI 会刻意避开它们[reset]")
-    console.print(f"{DIM}输入 q 退出，n 换动画，c 换兴趣，p 换 AI 引擎[reset]\n")
+    console.print(f"{DIM}输入 q 退出，n 换动画，c 换兴趣，s 设置 API[reset]\n")
 
     animation = "default"
-    provider = "anthropic"
     raw = Prompt.ask(f"\n{GREEN}你的兴趣领域[reset]（逗号分隔）", default="")
     if not raw or raw.lower() in ("q", "quit", "exit"):
         console.print(f"\n{DIM}再见！[reset]")
@@ -393,19 +549,12 @@ def _interactive():
         if anim_choice in {"default", "lightning", "chain", "laser"}:
             animation = anim_choice
 
-    prov_choice = Prompt.ask(
-        f"\n{CYAN}AI 引擎[reset] (anthropic / openai)",
-        default="anthropic",
-    )
-    if prov_choice.lower() in ("anthropic", "openai"):
-        provider = prov_choice.lower()
-
-    _run(interests, animation, 1.0, provider=provider)
+    _run(interests, animation, 1.0)
 
     while True:
         console.print()
         action = Prompt.ask(
-            f"{DIM}按 {GREEN}Enter[reset]{DIM} 重新鞭挞，{YELLOW}n[reset]{DIM} 换动画，{CYAN}p[reset]{DIM} 换引擎，{CYAN}c[reset]{DIM} 换兴趣，{RED}q[reset]{DIM} 退出[reset]",
+            f"{DIM}按 {GREEN}Enter[reset]{DIM} 重新鞭挞，{YELLOW}n[reset]{DIM} 换动画，{CYAN}s[reset]{DIM} 设置 API，{CYAN}c[reset]{DIM} 换兴趣，{RED}q[reset]{DIM} 退出[reset]",
             default="",
         ).strip().lower()
 
@@ -423,15 +572,10 @@ def _interactive():
             )
             if anim_choice in {"default", "lightning", "chain", "laser"}:
                 animation = anim_choice
-        elif action == "p":
-            prov_choice = Prompt.ask(
-                f"\n{CYAN}AI 引擎[reset] (anthropic / openai)",
-                default=provider,
-            )
-            if prov_choice.lower() in ("anthropic", "openai"):
-                provider = prov_choice.lower()
+        elif action == "s":
+            _config_set_interactive()
 
-        _run(interests, animation, 1.0, regenerate=True, provider=provider)
+        _run(interests, animation, 1.0, regenerate=True)
 
 
 if __name__ == "__main__":

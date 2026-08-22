@@ -96,7 +96,7 @@ async def handle_tools_list(req_id: Any, params: dict) -> dict:
 
 
 async def handle_tools_call(req_id: Any, params: dict) -> dict:
-    from ..backend.plan_generator import generate_plan
+    from ..backend.provider import generate_plan
     from ..backend.domain_picker import pick_domain
 
     tool_name = params.get("name")

@@ -260,7 +260,7 @@ def _config_wizard():
     cfg = {"provider": provider}
 
     key_hint = f"（{known['key_env']}）" if known["key_env"] != "API_KEY" else ""
-    api_key = Prompt.ask(f"\n[green]API Key[/green]{key_hint}", password=True)
+    api_key = Prompt.ask(f"\n[green]API Key[/green]{key_hint}")
     if api_key:
         cfg["api_key"] = api_key
 

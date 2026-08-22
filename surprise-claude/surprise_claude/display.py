@@ -150,12 +150,11 @@ def play_animation(name: str = "default", speed: float = 1.0) -> None:
 
     try:
         for frame_text, duration_ms in frames:
-            sys.stdout.write("\033[H\033[J")  # Cursor home + clear screen
-            console.print(frame_text, end="")
-            sys.stdout.flush()
+            console.clear()
+            console.print(frame_text)
             time.sleep((duration_ms / 1000.0) / speed)
     finally:
-        sys.stdout.write("\033[H\033[J\033[?25h")  # Clear + show cursor
+        sys.stdout.write("\033[?25h")
         sys.stdout.flush()
 
 
@@ -221,6 +220,6 @@ def display_plan(data: dict) -> None:
 # ─── Utility Functions ──────────────────────────────────────
 
 def clear_screen() -> None:
-    """Clear terminal screen using ANSI (works cross-platform via colorama)."""
-    sys.stdout.write("\033[H\033[J")
-    sys.stdout.flush()
+    """Clear terminal screen using Rich (cross-platform safe)."""
+    from rich.console import Console
+    Console().clear()

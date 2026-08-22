@@ -23,6 +23,7 @@ Thumbs.db
 
 # Local config (not for sharing)
 .claude/settings.local.json
+CLAUDE.md
 
 # Resource files (large binaries)
 resouce/

@@ -50,15 +50,9 @@ from .display import (
 from .backend.domain_picker import DOMAINS, pick_domain
 from .backend.plan_generator import generate_plan
 
-# Rich Console — on Windows, use colorama-wrapped streams
-if sys.platform == "win32":
-    _colorama_stream = colorama.ansitowin32.AnsiToWin32(sys.stdout)
-    console = Console(
-        stdout=_colorama_stream,
-        safe_box=True,
-    )
-else:
-    console = Console(safe_box=True)
+# Rich Console — colorama.init() already patches sys.stdout on Windows,
+# so Rich will write through colorama's ANSI-to-Win32 converter.
+console = Console(safe_box=True)
 
 app = typer.Typer(
     name="surprise-claude",

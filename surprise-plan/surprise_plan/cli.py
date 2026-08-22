@@ -1,14 +1,14 @@
-"""Surprise Claude — CLI entry point.
+"""Surprise-Plan — CLI entry point.
 
 Usage:
-    surprise-claude                           # Interactive mode
-    surprise-claude "AI, 音乐, 摄影"          # Direct mode
-    surprise-claude --demo "AI, 音乐, 摄影"   # Demo mode (no API key)
-    surprise-claude --animation lightning      # Direct mode with animation
-    surprise-claude config set                # Configure API settings
-    surprise-claude config show               # Show current config
-    surprise-claude config clear              # Clear saved config
-    surprise-claude --list-domains            # Show all domains
+    surprise-plan                           # Interactive mode
+    surprise-plan "AI, 音乐, 摄影"          # Direct mode
+    surprise-plan --demo "AI, 音乐, 摄影"   # Demo mode (no API key)
+    surprise-plan --animation lightning      # Direct mode with animation
+    surprise-plan config set                # Configure API settings
+    surprise-plan config show               # Show current config
+    surprise-plan config clear              # Clear saved config
+    surprise-plan --list-domains            # Show all domains
 """
 
 import os
@@ -49,7 +49,7 @@ console = Console(safe_box=True)
 config_app = typer.Typer(name="config", help="管理 API 配置")
 
 app = typer.Typer(
-    name="surprise-claude",
+    name="surprise-plan",
     add_completion=False,
     no_args_is_help=False,
 )
@@ -72,7 +72,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
     """Animation -> domain pick -> API call -> display plan."""
     if not interests:
         console.print("[red]错误：请至少提供一个兴趣领域。[/red]")
-        console.print("[green]示例: surprise-claude \"AI, 音乐, 摄影\"[/green]")
+        console.print("[green]示例: surprise-plan \"AI, 音乐, 摄影\"[/green]")
         raise typer.Exit(1)
 
     provider = get_current_provider()
@@ -85,7 +85,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
 
     if not regenerate:
         clear_screen()
-        console.print("[bold yellow][TARGET] Surprise Claude[/bold yellow]")
+        console.print("[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
         console.print("[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
         console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
@@ -108,8 +108,8 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
     except EnvironmentError as e:
         console.print(f"[red]{e}[/red]")
         console.print()
-        console.print(f"[dim]查看配置: surprise-claude config show[/dim]")
-        console.print(f"[green]设置 API:  surprise-claude config set[/green]")
+        console.print(f"[dim]查看配置: surprise-plan config show[/dim]")
+        console.print(f"[green]设置 API:  surprise-plan config set[/green]")
         raise typer.Exit(1)
     except Exception as e:
         msg = str(e)
@@ -119,7 +119,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
             console.print("  2. 账号未开通 API 访问权限")
             console.print("  3. 账号余额不足")
             console.print()
-            console.print(f"[dim]运行 surprise-claude config set 更新 Key[/dim]")
+            console.print(f"[dim]运行 surprise-plan config set 更新 Key[/dim]")
         else:
             console.print(f"[red]生成失败: {e}[/red]")
         raise typer.Exit(1)
@@ -132,7 +132,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
     })
 
 
-# ─── Direct command (surprise-claude "AI, 音乐, 摄影") ────
+# ─── Direct command (surprise-plan "AI, 音乐, 摄影") ────
 
 @app.command()
 def main(
@@ -144,7 +144,7 @@ def main(
     animation: str = typer.Option("default", "--animation", "-a", help="动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
 ):
-    """[TARGET] Surprise Claude — 打破算法茧房，随机生成学习计划"""
+    """[TARGET] Surprise-Plan — 打破算法茧房，随机生成学习计划"""
     if interests is None:
         _interactive()
         return
@@ -214,7 +214,7 @@ def config_set(
     model: str = typer.Option(None, "--model", "-m", help="模型名称"),
     interactive: bool = typer.Option(False, "--interactive", "-i", help="交互式设置"),
 ):
-    """设置 API 配置（保存到 ~/.surprise-claude/config.json）"""
+    """设置 API 配置（保存到 ~/.surprise-plan/config.json）"""
     if interactive or not any([provider, api_key, base_url, model]):
         _config_wizard()
         return
@@ -374,7 +374,7 @@ def _generate_demo_plan() -> dict:
 def _interactive(default_anim: str = "default", demo: bool = False):
     """Interactive REPL mode."""
     clear_screen()
-    console.print(f"\n[bold yellow][TARGET] Surprise Claude[/bold yellow]")
+    console.print(f"\n[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
     console.print(f"[dim]打破算法茧房 · 随机学习计划生成器[/dim]")
     console.print(f"[dim]输入你的兴趣领域，AI 会刻意避开它们[/dim]")
     console.print(f"[dim]Enter 重新生成 · n 换动画 · s 设置 API · q 退出[/dim]\n")

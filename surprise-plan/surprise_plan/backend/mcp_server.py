@@ -1,4 +1,4 @@
-"""MCP Server — "Surprise Claude" Track 03 Plugin.
+"""MCP Server — "Surprise-Plan" Track 03 Plugin.
 
 Exposes one tool: generate_surprise_plan
 
@@ -9,9 +9,9 @@ Usage with Claude Desktop:
     Add to claude_desktop_config.json:
     {
       "mcpServers": {
-        "surprise-claude": {
+        "surprise-plan": {
           "command": "python",
-          "args": ["-m", "surprise_claude.backend.mcp_server"],
+          "args": ["-m", "surprise_plan.backend.mcp_server"],
           "env": {
             "LLM_PROVIDER": "deepseek",
             "DEEPSEEK_API_KEY": "sk-..."
@@ -30,7 +30,7 @@ import asyncio
 from typing import Any
 
 PROTOCOL_VERSION = "2024-11-05"
-SERVER_NAME = "surprise-claude"
+SERVER_NAME = "surprise-plan"
 SERVER_VERSION = "1.0.0"
 
 TOOLS = [

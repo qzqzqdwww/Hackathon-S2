@@ -3,14 +3,14 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "surprise-claude"
+name = "surprise-plan"
 version = "1.1.0"
-description = "🎯 Surprise Claude — 打破算法茧房，随机生成学习计划。大工黑客松 S2 Track 03。"
+description = "🎯 Surprise-Plan — 打破算法茧房，随机生成学习计划。大工黑客松 S2 Track 03。"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "Surprise Claude Team" },
+    { name = "Surprise-Plan Team" },
 ]
 keywords = ["cli", "claude", "openai", "learning", "hackathon", "serendipity"]
 classifiers = [
@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-surprise-claude = "surprise_claude.cli:app"
+surprise-plan = "surprise_plan.cli:app"
 
 [project.urls]
 Homepage = "https://github.com/qzqzqdwww/Hackathon-S2"
@@ -51,7 +51,7 @@ Repository = "https://github.com/qzqzqdwww/Hackathon-S2"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["surprise_claude*"]
+include = ["surprise_plan*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

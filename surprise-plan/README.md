@@ -1,6 +1,6 @@
-# Surprise Claude
+# Surprise-Plan
 
-[English](#surprise-claude) | [中文](#中文)
+[English](#surprise-plan) | [中文](#中文)
 
 **打破算法茧房 · 随机学习计划生成器**
 大工黑客松 S2 — Track 03 · 开放原子
@@ -11,7 +11,7 @@
 
 ### What it does
 
-Surprise Claude is a terminal-native CLI tool that breaks you out of your algorithmic filter bubble.
+Surprise-Plan is a terminal-native CLI tool that breaks you out of your algorithmic filter bubble.
 
 You tell it your interests — it **deliberately excludes** them, then randomly selects an unfamiliar domain and generates a structured 4-week learning plan with creative bridges drawn back to what you already love.
 
@@ -19,7 +19,7 @@ You tell it your interests — it **deliberately excludes** them, then randomly 
 
 ### Privacy
 
-API keys are stored locally in `~/.surprise-claude/config.json` (plaintext, git-ignored).
+API keys are stored locally in `~/.surprise-plan/config.json` (plaintext, git-ignored).
 No data is sent anywhere except to your chosen AI provider's API. Your interests
 and generated plans are never logged or shared.
 
@@ -31,7 +31,7 @@ pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
 
 # Or clone and install
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-claude
+cd Hackathon-S2/surprise-plan
 pip install -e .
 ```
 
@@ -41,7 +41,7 @@ Works with **any OpenAI-compatible API**: Claude, DeepSeek, Zhipu GLM, StepFun, 
 
 **Recommended — interactive setup:**
 ```bash
-surprise-claude config set
+surprise-plan config set
 # Follow prompts: select engine → enter API Key → save
 ```
 
@@ -61,32 +61,32 @@ pip install ".[all]"        # both
 
 ```bash
 # Interactive mode (recommended)
-surprise-claude
+surprise-plan
 
 # Direct mode
-surprise-claude "AI, 音乐, 摄影"
+surprise-plan "AI, 音乐, 摄影"
 
 # Demo mode (no API key needed)
-surprise-claude --demo "AI, 音乐, 摄影"
+surprise-plan --demo "AI, 音乐, 摄影"
 
 # List all 70 domains
-surprise-claude --list-domains
+surprise-plan --list-domains
 
 # List animation styles
-surprise-claude --list-animations
+surprise-plan --list-animations
 
 # Manage API config
-surprise-claude config set
-surprise-claude config show
-surprise-claude config clear
+surprise-plan config set
+surprise-plan config show
+surprise-plan config clear
 ```
 
 ### Demo
 
 ```
-$ surprise-claude "AI, 音乐, 摄影"
+$ surprise-plan "AI, 音乐, 摄影"
 
-                            [TARGET] Surprise Claude
+                            [TARGET] Surprise-Plan
                            打破算法茧房 · 制造意外
 
                          你的兴趣: AI, 音乐, 摄影
@@ -170,15 +170,15 @@ $ surprise-claude "AI, 音乐, 摄影"
 ### Architecture
 
 ```
-surprise-claude/
-├── surprise_claude/
+surprise-plan/
+├── surprise_plan/
 │   ├── __init__.py
-│   ├── __main__.py          # python -m surprise_claude
+│   ├── __main__.py          # python -m surprise_plan
 │   ├── cli.py               # Typer CLI entry point
 │   ├── display.py           # Terminal animations + plan display
 │   └── backend/
 │       ├── __init__.py
-│       ├── config.py        # Persistent config (~/.surprise-claude/config.json)
+│       ├── config.py        # Persistent config (~/.surprise-plan/config.json)
 │       ├── domain_picker.py # 70-domain pool + weighted random
 │       ├── provider.py      # Multi-provider LLM client
 │       └── mcp_server.py    # MCP stdio server
@@ -193,7 +193,7 @@ surprise-claude/
 
 ### 这是什么
 
-Surprise Claude 是一个**终端原生**的 CLI 工具，专门用来打破你的算法茧房。
+Surprise-Plan 是一个**终端原生**的 CLI 工具，专门用来打破你的算法茧房。
 
 你输入自己感兴趣的领域——系统会**刻意避开**它们，随机选出一个你从未涉猎过的领域，并生成一份结构化的 4 周学习计划，同时画出与你的兴趣之间的意外关联桥。
 
@@ -204,7 +204,7 @@ Surprise Claude 是一个**终端原生**的 CLI 工具，专门用来打破你�
 ```bash
 # 克隆项目
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-claude
+cd Hackathon-S2/surprise-plan
 pip install -e .
 
 # 安装 AI 引擎 SDK（至少选一个）
@@ -218,18 +218,18 @@ pip install ".[anthropic]"    # Claude
 
 **推荐 — 交互式配置：**
 ```bash
-surprise-claude config set
+surprise-plan config set
 # 按提示选择引擎 → 输入 API Key → 保存
 ```
 
 **查看配置：**
 ```bash
-surprise-claude config show
+surprise-plan config show
 ```
 
 **清除配置：**
 ```bash
-surprise-claude config clear
+surprise-plan config clear
 ```
 
 **或直接设置环境变量：**
@@ -245,19 +245,19 @@ export DEEPSEEK_API_KEY="sk-..."
 
 ```bash
 # 交互模式（推荐，可持续生成）
-surprise-claude
+surprise-plan
 
 # 直接输入兴趣
-surprise-claude "AI, 音乐, 摄影"
+surprise-plan "AI, 音乐, 摄影"
 
 # 演示模式（无需 API Key）
-surprise-claude --demo "AI, 音乐, 摄影"
+surprise-plan --demo "AI, 音乐, 摄影"
 
 # 列出所有领域
-surprise-claude --list-domains
+surprise-plan --list-domains
 
 # 列出动画样式
-surprise-claude --list-animations
+surprise-plan --list-animations
 ```
 
 ### 技术栈

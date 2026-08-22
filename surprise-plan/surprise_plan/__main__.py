@@ -1,4 +1,4 @@
-"""Allow running as: python -m surprise_claude"""
+"""Allow running as: python -m surprise_plan"""
 
 from .cli import app
 

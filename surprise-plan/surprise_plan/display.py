@@ -1,4 +1,4 @@
-"""Terminal-native display engine for Surprise Claude.
+"""Terminal-native display engine for Surprise-Plan.
 
 Provides:
 - ASCII art Claude figure with animated expressions

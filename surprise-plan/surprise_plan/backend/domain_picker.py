@@ -1,4 +1,4 @@
-""" Diverse domain pool for the "Surprise Claude" experience.
+""" Diverse domain pool for the "Surprise-Plan" experience.
     Each domain is a potential learning path that is intentionally
     different from common tech topics, enabling the "breaking filter bubbles"
     mechanic at the heart of Track 03.

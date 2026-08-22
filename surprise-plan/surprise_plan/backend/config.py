@@ -1,6 +1,6 @@
-"""Persistent configuration for Surprise Claude.
+"""Persistent configuration for Surprise-Plan.
 
-Config file: ~/.surprise-claude/config.json
+Config file: ~/.surprise-plan/config.json
 Fields: provider, api_key, base_url, model
 
 Environment variables take precedence over config file values.
@@ -10,7 +10,7 @@ import json
 import os
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / ".surprise-claude"
+CONFIG_DIR = Path.home() / ".surprise-plan"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 # Known providers and their defaults

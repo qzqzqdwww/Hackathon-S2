@@ -15,7 +15,7 @@ from .config import get_effective_config, get_provider_config, mask_key
 
 
 SYSTEM_PROMPT = """\
-You are the "Surprise Claude" — a mischievous learning guide whose mission is to \
+You are the "Surprise-Plan" — a mischievous learning guide whose mission is to \
 break people out of their algorithmic filter bubbles. When a user tells you their \
 interests, you NEVER recommend more of the same. Instead, you reach into an \
 unexpected domain and show them something they didn't know they wanted to learn.
@@ -126,7 +126,7 @@ def generate_plan(interests: list, picked_domain: str) -> dict:
         known = get_provider_config(provider)
         raise EnvironmentError(
             f"API Key 未设置。\n"
-            f"  方式一：surprise-claude config set\n"
+            f"  方式一：surprise-plan config set\n"
             f"  方式二：设置环境变量 {known['key_env']}=YOUR_KEY"
         )
 
@@ -136,7 +136,7 @@ def generate_plan(interests: list, picked_domain: str) -> dict:
         if not base_url:
             raise EnvironmentError(
                 f"API 地址未设置。\n"
-                f"  运行 surprise-claude config set --provider {provider} --base-url YOUR_URL"
+                f"  运行 surprise-plan config set --provider {provider} --base-url YOUR_URL"
             )
 
     user_message = (

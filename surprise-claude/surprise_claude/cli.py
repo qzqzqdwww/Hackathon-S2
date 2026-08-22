@@ -3,11 +3,12 @@
 Usage:
     surprise-claude                           # Interactive mode
     surprise-claude "AI, 音乐, 摄影"          # Direct mode
+    surprise-claude --demo "AI, 音乐, 摄影"   # Demo mode (no API key)
+    surprise-claude --animation lightning      # Direct mode with animation
     surprise-claude config set                # Configure API settings
     surprise-claude config show               # Show current config
     surprise-claude config clear              # Clear saved config
     surprise-claude --list-domains            # Show all domains
-    surprise-claude --animation lightning     # Use lightning animation
 """
 
 import os
@@ -59,7 +60,7 @@ app.add_typer(config_app, name="config")
 
 @app.callback(invoke_without_command=True)
 def default(ctx: typer.Context):
-    """Default: interactive mode when no subcommand is given."""
+    """Default entry point: interactive mode when no subcommand given."""
     if ctx.invoked_subcommand is not None:
         return
     _interactive()
@@ -131,7 +132,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
     })
 
 
-# ─── Direct command ────────────────────────────────────────
+# ─── Direct command (surprise-claude "AI, 音乐, 摄影") ────
 
 @app.command()
 def main(
@@ -139,18 +140,11 @@ def main(
         None,
         help="你的兴趣领域（逗号分隔），例如: \"AI, 音乐, 摄影\"",
     ),
-    animation: str = typer.Option("default", "--animation", "-a", help="鞭挞动画样式"),
-    speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
-    list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
-    list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
     demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
+    animation: str = typer.Option("default", "--animation", "-a", help="动画样式"),
+    speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
 ):
     """[TARGET] Surprise Claude — 打破算法茧房，随机生成学习计划"""
-
-    if list_domains:
-        show_list_domains()
-    if list_animations:
-        show_list_animations()
     if interests is None:
         _interactive()
         return
@@ -170,28 +164,6 @@ def main(
 
 
 # ─── Helpers ───────────────────────────────────────────────
-
-def show_help():
-    clear_screen()
-    console.print(f"\n[bold yellow][TARGET] Surprise Claude[/bold yellow]")
-    console.print(f"[dim]打破算法茧房 · 随机学习计划生成器[/dim]")
-    console.print(f"[dim]大工黑客松 S2 — Track 03 · 开放原子[/dim]\n")
-    console.print(f"\n[bold]用法:[/bold]")
-    console.print(f"  [green]surprise-claude[/green]                       交互模式")
-    console.print(f"  [green]surprise-claude[/green] [yellow]<兴趣>[/yellow]              直接生成（逗号分隔）")
-    console.print(f"  [green]surprise-claude[/green] [yellow]config set[/yellow]          设置 API 配置")
-    console.print(f"  [green]surprise-claude[/green] [yellow]config show[/yellow]          查看当前配置")
-    console.print(f"  [green]surprise-claude[/green] [yellow]config clear[/yellow]         清除配置")
-    console.print(f"  [green]surprise-claude[/green] [yellow]--demo[/yellow]              演示模式")
-    console.print(f"  [green]surprise-claude[/green] [yellow]--list-domains[/yellow]       列出领域池")
-    console.print(f"  [green]surprise-claude[/green] [yellow]--list-animations[/yellow]    列出动画样式")
-    console.print(f"  [green]surprise-claude[/green] [yellow]--help[/yellow]              显示此帮助")
-    console.print(f"\n[bold]动画样式:[/bold]  default / lightning / chain / laser")
-    console.print(f"\n[bold]AI 引擎:[/bold]   Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等")
-    console.print(f"            [dim]运行 config set 配置[/dim]")
-    console.print()
-    raise typer.Exit()
-
 
 def show_list_domains():
     clear_screen()
@@ -399,7 +371,7 @@ def _generate_demo_plan() -> dict:
 
 # ─── Interactive REPL ──────────────────────────────────────
 
-def _interactive():
+def _interactive(default_anim: str = "default", demo: bool = False):
     """Interactive REPL mode."""
     clear_screen()
     console.print(f"\n[bold yellow][TARGET] Surprise Claude[/bold yellow]")
@@ -407,7 +379,7 @@ def _interactive():
     console.print(f"[dim]输入你的兴趣领域，AI 会刻意避开它们[/dim]")
     console.print(f"[dim]Enter 重新生成 · n 换动画 · s 设置 API · q 退出[/dim]\n")
 
-    animation = "default"
+    animation = default_anim
     raw = Prompt.ask(f"\n[green]你的兴趣领域[/green]（逗号分隔）", default="")
     if not raw or raw.lower() in ("q", "quit", "exit"):
         console.print(f"\n[dim]再见！[/dim]")
@@ -417,12 +389,12 @@ def _interactive():
 
     anim_choice = Prompt.ask(
         f"\n[yellow]动画样式[/yellow] (default / lightning / chain / laser)",
-        default="default",
+        default=animation,
     )
     if anim_choice in {"default", "lightning", "chain", "laser"}:
         animation = anim_choice
 
-    _run(interests, animation, 1.0)
+    _run(interests, animation, 1.0, demo_mode=demo)
 
     while True:
         console.print()
@@ -448,7 +420,7 @@ def _interactive():
         elif action == "s":
             _config_wizard()
 
-        _run(interests, animation, 1.0, regenerate=True)
+        _run(interests, animation, 1.0, regenerate=True, demo_mode=demo)
 
 
 if __name__ == "__main__":

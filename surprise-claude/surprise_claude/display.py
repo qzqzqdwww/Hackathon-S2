@@ -4,16 +4,17 @@ Provides:
 - ASCII art Claude figure with animated expressions
 - Frame-based whip animation system (multiple styles)
 - Rich terminal output for plan display
-- ANSI escape code handling for cursor/colors
-- Windows GBK-safe: all emoji replaced with ASCII art
+- Windows-safe: uses Rich markup tags instead of raw ANSI
 """
 
 import time
 import sys
 import os
+import re
 from typing import List, Tuple
 
-# ─── ANSI helpers ──────────────────────────────────────────
+# ─── ANSI helpers (for animation system only) ──────────────
+# These are written directly to sys.stdout and go through colorama on Windows.
 
 def _ansi(code: str) -> str:
     return f"\033[{code}m"
@@ -38,6 +39,47 @@ CLEAR_SCREEN = "\033[2J"
 CURSOR_UP = "\033[F"
 SAVE_CURSOR = "\033[s"
 RESTORE_CURSOR = "\033[u"
+
+# ─── Rich markup tags (for console output) ─────────────────
+# Use these with console.print() — Rich handles them cross-platform.
+# DO NOT use raw ANSI constants (BOLD, RED, etc.) with console.print().
+
+_TAG_MAP = {
+    "BOLD": "bold",
+    "DIM": "dim",
+    "RED": "red",
+    "GREEN": "green",
+    "YELLOW": "yellow",
+    "BLUE": "blue",
+    "MAGENTA": "magenta",
+    "CYAN": "cyan",
+    "WHITE": "white",
+    "ORANGE": "orange1",
+    "RESET": "reset",
+}
+
+
+def rprint(text: str = "") -> None:
+    """Print text with Rich markup, safely on all platforms."""
+    try:
+        from rich.console import Console
+        console = Console()
+        console.print(text)
+    except ImportError:
+        # Fallback: strip Rich tags and print plain
+        plain = re.sub(r'\[/?[a-z ]+\]', '', text)
+        print(plain)
+
+
+def rpanel(text: str, border: str = "dim", title: str = "") -> None:
+    """Print text in a Rich panel."""
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        console = Console()
+        console.print(Panel(text, border_style=border, title=title, padding=(0, 1)))
+    except ImportError:
+        print(text)
 
 
 # ─── ASCII Art ─────────────────────────────────────────────
@@ -71,16 +113,14 @@ CLAUDE_SPARKLE = """\
    (_|   |_)"""
 
 
-# ─── Animation Frame Definitions ───────────────────────────
+# ─── Animation Helpers ─────────────────────────────────────
 
 def _center(text: str, width: int = 40) -> str:
-    """Center each line of a multi-line string."""
     lines = text.split("\n")
     return "\n".join(line.center(width) for line in lines)
 
 
 def _whip_line(x_offset: int, length: int = 4, color: str = YELLOW) -> str:
-    """Generate a whip line at a given horizontal offset."""
     lines = []
     base = " " * x_offset
     lines.append(f"{color}{base}|{RESET}")
@@ -92,7 +132,6 @@ def _whip_line(x_offset: int, length: int = 4, color: str = YELLOW) -> str:
 
 
 def _particles(count: int = 6, color: str = YELLOW) -> str:
-    """Generate particle burst string — ASCII-safe, no emoji."""
     symbols = ["*", "+", ".", ":", "o", "O"]
     parts = []
     for i in range(count):
@@ -103,14 +142,13 @@ def _particles(count: int = 6, color: str = YELLOW) -> str:
 
 
 def _speed_line(offset: int, color: str = YELLOW) -> str:
-    """Generate speed line for fast-moving objects."""
     return f"{color}{' ' * offset}======={RESET}"
 
 
-def get_animation(name: str) -> List[Tuple[str, int]]:
-    """Return animation frames for the given animation name."""
-    name = name.lower().strip()
+# ─── Animation Frames ──────────────────────────────────────
 
+def get_animation(name: str) -> List[Tuple[str, int]]:
+    name = name.lower().strip()
     if name in ("lightning", "闪电"):
         return _lightning_frames()
     elif name in ("chain", "链条"):
@@ -122,7 +160,6 @@ def get_animation(name: str) -> List[Tuple[str, int]]:
 
 
 def _default_frames() -> List[Tuple[str, int]]:
-    """Default whip animation (藤条) — all ASCII, no emoji."""
     return [
         (f"{_center(_whip_line(22, 5))}\n{_center(CLAUDE_NORMAL)}", 150),
         (f"{_speed_line(14)}\n{_center(_whip_line(18, 3))}\n{_center(CLAUDE_NORMAL)}", 80),
@@ -135,7 +172,6 @@ def _default_frames() -> List[Tuple[str, int]]:
 
 
 def _lightning_frames() -> List[Tuple[str, int]]:
-    """Lightning whip animation."""
     return [
         (f"{_center(CLAUDE_NORMAL)}", 80),
         (f"{RED}{_speed_line(10)}{RESET}\n{_center(CLAUDE_NORMAL)}", 60),
@@ -148,7 +184,6 @@ def _lightning_frames() -> List[Tuple[str, int]]:
 
 
 def _chain_frames() -> List[Tuple[str, int]]:
-    """Chain whip animation."""
     chain_color = DIM + WHITE
     return [
         (f"{_center(_whip_line(22, 6, chain_color))}\n{_center(CLAUDE_NORMAL)}", 150),
@@ -162,7 +197,6 @@ def _chain_frames() -> List[Tuple[str, int]]:
 
 
 def _laser_frames() -> List[Tuple[str, int]]:
-    """Laser whip animation."""
     laser_color = CYAN
     return [
         (f"{laser_color}{_center('==========')}{RESET}\n{_center(CLAUDE_NORMAL)}", 80),
@@ -177,7 +211,7 @@ def _laser_frames() -> List[Tuple[str, int]]:
 # ─── Animation Player ──────────────────────────────────────
 
 def play_animation(name: str = "default", speed: float = 1.0) -> None:
-    """Play a terminal animation."""
+    """Play a terminal animation using raw ANSI (goes through colorama on Windows)."""
     frames = get_animation(name)
     if not frames:
         return
@@ -197,32 +231,10 @@ def play_animation(name: str = "default", speed: float = 1.0) -> None:
         sys.stdout.flush()
 
 
-def play_mini_animation(name: str = "default", speed: float = 1.0) -> None:
-    """Compact one-line animation for inline use."""
-    frames = get_animation(name)
-    if not frames:
-        return
-
-    try:
-        sys.stdout.write(HIDE_CURSOR)
-        sys.stdout.flush()
-
-        for frame_text, duration_ms in frames:
-            last_line = frame_text.strip().split("\n")[-1]
-            sys.stdout.write("\033[2K\r")
-            sys.stdout.write(last_line)
-            sys.stdout.flush()
-            time.sleep((duration_ms / 1000.0) / speed)
-
-    finally:
-        sys.stdout.write("\033[2K\r" + SHOW_CURSOR)
-        sys.stdout.flush()
-
-
 # ─── Plan Display ──────────────────────────────────────────
 
 def display_plan(data: dict) -> None:
-    """Display a generated plan using rich formatting."""
+    """Display a generated plan using Rich formatting (cross-platform safe)."""
     plan = data.get("plan", {})
     domain = plan.get("domain", data.get("picked_domain", "?"))
     tagline = plan.get("tagline", "")
@@ -319,20 +331,19 @@ def _display_plan_plain(plan, domain, tagline, why, connections, learning_path, 
     print()
 
 
+# ─── Utility Functions ─────────────────────────────────────
+
 def clear_line() -> None:
-    """Clear the current terminal line."""
     sys.stdout.write("\033[2K\r")
     sys.stdout.flush()
 
 
 def move_up(lines: int = 1) -> None:
-    """Move cursor up N lines."""
     sys.stdout.write(f"\033[{lines}F")
     sys.stdout.flush()
 
 
 def clear_screen() -> None:
-    """Clear the entire terminal screen."""
     sys.stdout.write(CLEAR_SCREEN + CURSOR_HOME)
     sys.stdout.flush()
 

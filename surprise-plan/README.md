@@ -162,10 +162,10 @@ surprise-plan/
 
 ## 历史版本
 
-| 版本 | 说明 | 下载方式 |
-|------|------|---------|
-| **v1** | 159 领域池 + 全 provider 支持 + 68 个 mock 测试 + README 重写 | `git clone` 默认获取（`main` 分支） |
-| **v0** | 初始版本（49 领域池，仅 Claude API，无测试） | `git clone --branch v1` 下载 v0 标签 |
+| 版本 | 领域数 | 测试 | 下载方式 |
+|------|--------|------|---------|
+| **main** (最新) | 159 | 68 个 mock 测试 | `git clone` 默认获取 |
+| **v1** | 49 | 无 | `git clone --branch v1 <url>` |
 
 ### 下载指定版本
 
@@ -178,12 +178,12 @@ cd Hackathon-S2/surprise-plan
 git clone --branch v1 https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
-# 在已克隆的仓库中查看所有标签
-git tag
-git checkout v1   # 切换到 v1
+# 在已克隆的仓库中切换
+git tag                    # 查看所有可用版本
+git checkout v1            # 切换到 v1
 ```
 
-> GitHub Releases 页面也会提供每个版本的 ZIP 下载：
+> 也可在 GitHub Releases 页面下载 ZIP：
 > `https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1`
 
 ---

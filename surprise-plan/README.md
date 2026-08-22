@@ -2,14 +2,18 @@
 
 [English](#surprise-plan) | [中文](#中文)
 
-**打破算法茧房 · 随机学习计划生成器**
+**打破算法茧房 · 随机学习计划生成器**  
 大工黑客松 S2 — Track 03 · 开放原子
 
 ---
 
-## English
+## 这是什么
 
-### What it does
+Surprise-Plan 是一个终端原生 CLI 工具。你输入自己的兴趣领域，系统**刻意避开**它们，随机选出一个你从未涉猎的领域，生成一份 4 周学习计划，并画出与你的兴趣之间的意外关联桥。
+
+**最好的发现，往往来自意外。**
+
+## English
 
 Surprise-Plan is a terminal-native CLI tool that breaks you out of your algorithmic filter bubble.
 
@@ -17,268 +21,145 @@ You tell it your interests — it **deliberately excludes** them, then randomly 
 
 **The best discoveries come from accidents.**
 
-### Privacy
-
-API keys are stored locally in `~/.surprise-plan/config.json` (plaintext, git-ignored).
-No data is sent anywhere except to your chosen AI provider's API. Your interests
-and generated plans are never logged or shared.
-
-### Install
-
-```bash
-# Direct install (requires git)
-pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
-
-# Or clone and install
-git clone https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-plan
-pip install -e .
-```
-
-### Configure API
-
-Works with **any OpenAI-compatible API**: Claude, DeepSeek, Zhipu GLM, StepFun, Doubao, SiliconFlow, OpenAI, etc.
-
-**Recommended — interactive setup:**
-```bash
-surprise-plan config set
-# Follow prompts: select engine → enter API Key → save
-```
-
-**Or set environment variable directly:**
-```bash
-export DEEPSEEK_API_KEY="sk-..."
-```
-
-Install the OpenAI SDK (needed for all non-Claude providers):
-```bash
-pip install ".[openai]"     # DeepSeek, Zhipu, StepFun, Doubao, etc.
-pip install ".[anthropic]"  # Claude only
-pip install ".[all]"        # both
-```
-
-### Usage
-
-```bash
-# Interactive mode (recommended)
-surprise-plan
-
-# Direct mode
-surprise-plan "AI, 音乐, 摄影"
-
-# Demo mode (no API key needed)
-surprise-plan --demo "AI, 音乐, 摄影"
-
-# List all 70 domains
-surprise-plan --list-domains
-
-# List animation styles
-surprise-plan --list-animations
-
-# Manage API config
-surprise-plan config set
-surprise-plan config show
-surprise-plan config clear
-```
-
-### Demo
-
-```
-$ surprise-plan "AI, 音乐, 摄影"
-
-                            [TARGET] Surprise-Plan
-                           打破算法茧房 · 制造意外
-
-                         你的兴趣: AI, 音乐, 摄影
-
-                      即将为你随机揭示一个陌生领域...
-
-                               |
-                                |
-                                 |
-                                  |
-                                   |
-                                    \
-                      /\_/
-                    ( o.o )         =======
-                      > ^ <                |
-                    /|   |\                |
-                   (_|   |_)               \
-                                            |
-                                            |
-                                            |
-                               * BOOM *
-                      /\_/
-                    ( >o< )
-                      > w <
-                    /|   |\
-                   (_|   |_)
-                *   +   .   :       * * *
-                      ( *.* )
-                        > ^ <
-                      /|   |\
-                     (_|   |_)
-                               *
-
-[TARGET] 养蜂 (Beekeeping)
-"The rhythm of a hive is the tempo your music practice has been missing"
-
-[SEARCH] 为什么学这个
-┌──────────────────────────────────────────────┐
-│ 养蜂是自然界最精密的分布式系统。一个蜂群由上 │
-│ 万只蜜蜂组成，却没有任何中央控制——它们通过  │
-│ "摇摆舞"传递信息，通过信息素协调行动。如果你 │
-│ 对AI感兴趣，你会惊叹于这套没有算法的智能；如 │
-│ 果你对音乐感兴趣，你会发现蜂群振翅的频率本身 │
-│ 就是一首交响乐。                              │
-└──────────────────────────────────────────────┘
-
-[BRIDGE] 与你兴趣的意外关联
-  -> 养蜂的"摇摆舞"通信协议是自然界最原始的舞蹈形式
-  -> 微距摄影技巧可以直接迁移到蜂巢内部拍摄
-  -> AI蜂群算法（Swarm Intelligence）正是受此启发
-
-[MAP] 四周学习路径
-┌──────────────────────────────────────────────┐
-│ 第 1 周：蜂巢的社会结构与蜜蜂语言             │
-│   - 阅读《The Honey Bee》前3章               │
-│   - 观看蜜蜂摇摆舞纪录片                      │
-│   - 画出蜂群信息传递流程图                    │
-└──────────────────────────────────────────────┘
-
-[SPARK] 意外之喜
-┌──────────────────────────────────────────────┐
-│ 当你用摄影师的眼光观察蜂巢，用算法工程师的思  │
-│ 维理解蜂群，养蜂就不再是农业——它是一种你从未 │
-│ 想过的、融合了艺术与科技的活体实验。          │
-└──────────────────────────────────────────────┘
-```
-
-### Supported AI Providers
-
-| Provider | Default model |
-|----------|---------------|
-| Anthropic Claude | claude-sonnet-4-20250514 |
-| OpenAI | gpt-4o-mini |
-| DeepSeek | deepseek-chat |
-| Zhipu GLM | glm-4-plus |
-| StepFun | step-2-16k |
-| Doubao | doubao-pro-32k |
-| SiliconFlow | Qwen/Qwen2.5-72B-Instruct |
-| Custom OpenAI-compatible | (you specify) |
-
-### Architecture
-
-```
-surprise-plan/
-├── surprise_plan/
-│   ├── __init__.py
-│   ├── __main__.py          # python -m surprise_plan
-│   ├── cli.py               # Typer CLI entry point
-│   ├── display.py           # Terminal animations + plan display
-│   └── backend/
-│       ├── __init__.py
-│       ├── config.py        # Persistent config (~/.surprise-plan/config.json)
-│       ├── domain_picker.py # 70-domain pool + weighted random
-│       ├── provider.py      # Multi-provider LLM client
-│       └── mcp_server.py    # MCP stdio server
-├── pyproject.toml
-├── requirements.txt
-└── README.md
-```
-
 ---
 
-## 中文
-
-### 这是什么
-
-Surprise-Plan 是一个**终端原生**的 CLI 工具，专门用来打破你的算法茧房。
-
-你输入自己感兴趣的领域——系统会**刻意避开**它们，随机选出一个你从未涉猎过的领域，并生成一份结构化的 4 周学习计划，同时画出与你的兴趣之间的意外关联桥。
-
-**最好的发现，往往来自意外。**
-
-### 快速开始
+## 快速开始
 
 ```bash
 # 克隆项目
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
+
+# 安装
 pip install -e .
 
 # 安装 AI 引擎 SDK（至少选一个）
-pip install ".[openai]"       # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI
-pip install ".[anthropic]"    # Claude
+pip install ".[openai]"      # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI
+pip install ".[anthropic]"   # Claude
 ```
 
-### 配置 API
+---
 
-支持任意 AI 引擎：Claude、DeepSeek、智谱 GLM、阶跃星辰、豆包、SiliconFlow 等。
+## 配置 API
 
-**推荐 — 交互式配置：**
+支持任意 OpenAI 兼容 API：Claude、DeepSeek、智谱 GLM、阶跃星辰、豆包、SiliconFlow、OpenAI 等。
+
 ```bash
+# 交互式配置（推荐）
 surprise-plan config set
-# 按提示选择引擎 → 输入 API Key → 保存
-```
 
-**查看配置：**
-```bash
-surprise-plan config show
-```
-
-**清除配置：**
-```bash
-surprise-plan config clear
-```
-
-**或直接设置环境变量：**
-```bash
-# Windows PowerShell
-$env:DEEPSEEK_API_KEY = "sk-..."
-
-# macOS / Linux
+# 或直接设置环境变量
 export DEEPSEEK_API_KEY="sk-..."
 ```
 
-### 运行
+配置优先级：环境变量 > 配置文件 > 内置默认值
+
+---
+
+## 使用
 
 ```bash
-# 交互模式（推荐，可持续生成）
+# 交互模式（可持续生成）
 surprise-plan
 
 # 直接输入兴趣
 surprise-plan "AI, 音乐, 摄影"
 
 # 演示模式（无需 API Key）
-surprise-plan --demo "AI, 音乐, 摄影"
+surprise-plan main --demo
 
-# 列出所有领域
+# 列出 159 个可选领域
 surprise-plan --list-domains
 
 # 列出动画样式
 surprise-plan --list-animations
 ```
 
-### 技术栈
+### 交互模式快捷键
 
-| 组件 | 技术 |
+- `Enter` — 重新生成
+- `n` — 切换动画样式
+- `s` — 设置 API
+- `q` — 退出
+
+---
+
+## 运行测试
+
+```bash
+python -m pytest tests/ -v
+```
+
+68 个 mock 测试，覆盖领域选取、配置管理、API 调用、CLI 入口，无需真实 API Key。
+
+---
+
+## 架构
+
+```
+surprise-plan/
+├── surprise_plan/
+│   ├── __init__.py
+│   ├── __main__.py           # python -m surprise_plan
+│   ├── cli.py                # Typer CLI 入口
+│   ├── display.py            # 终端动画 + 计划展示
+│   └── backend/
+│       ├── __init__.py
+│       ├── config.py         # 持久化配置 (~/.surprise-plan/config.json)
+│       ├── domain_picker.py  # 159 领域池 + 加权随机选取
+│       ├── provider.py       # 多 provider LLM 客户端
+│       └── mcp_server.py     # MCP stdio 服务器
+├── tests/                    # 68 个 pytest mock 测试
+├── pyproject.toml
+└── README.md
+```
+
+### 核心模块
+
+| 模块 | 职责 |
 |------|------|
-| CLI 框架 | Typer |
-| 终端 UI | Rich |
-| AI 引擎 | 任意 API（Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等） |
-| 动画系统 | 纯终端 ANSI 字符动画 |
-| MCP 集成 | stdio JSON-RPC 2.0 |
+| `cli.py` | Typer CLI：交互模式、直接模式、config 子命令 |
+| `display.py` | Rich 面板渲染 + 4 种 ASCII  whip 动画（default/lightning/chain/laser） |
+| `backend/domain_picker.py` | 159 个细分领域池，按学术分类组织；加权随机 + 语义距离评分 |
+| `backend/provider.py` | 多 provider 抽象：Anthropic + 所有 OpenAI 兼容 API |
+| `backend/config.py` | 8 个内置 provider 默认值 + JSON 持久化 + env 优先级 |
 
-### 动画样式
+---
 
-| 样式 | 说明 |
+## 支持的 AI 引擎
+
+| 引擎 | 默认模型 | 环境变量 |
+|------|---------|---------|
+| Anthropic Claude | claude-sonnet-4-20250514 | `ANTHROPIC_API_KEY` |
+| OpenAI | gpt-4o-mini | `OPENAI_API_KEY` |
+| DeepSeek | deepseek-chat | `DEEPSEEK_API_KEY` |
+| 智谱 GLM | glm-4-plus | `ZHIPU_API_KEY` |
+| 阶跃星辰 | step-2-16k | `STEPFUN_API_KEY` |
+| 豆包 | doubao-pro-32k | `DOUBAO_API_KEY` |
+| SiliconFlow | Qwen/Qwen2.5-72B-Instruct | `SILICONFLOW_API_KEY` |
+| Custom | (你指定) | `API_KEY` |
+
+---
+
+## 隐私
+
+- API Key 存储在 `~/.surprise-plan/config.json`，已加入 `.gitignore`
+- 仅向用户选择的 AI 引擎发送请求，不记录或分享任何数据
+- Key 在界面中仅显示前 4 位 + 后 4 位
+
+---
+
+## 动画样式
+
+| 样式 | 效果 |
 |------|------|
 | `default` | 藤条（经典鞭挞 + 金色粒子爆发） |
 | `lightning` | 闪电（红色电流 + 瞬间打击） |
 | `chain` | 链条（金属质感 + 沉稳打击） |
 | `laser` | 激光（瞄准 + 瞬间命中 + 残影） |
 
-### License
+---
+
+## License
 
 MIT — 自由使用、修改、分发。

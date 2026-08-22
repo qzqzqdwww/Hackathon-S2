@@ -187,16 +187,6 @@ surprise-claude/
 └── README.md
 ```
 
-### Track 03 Alignment
-
-| Requirement | Implementation |
-|-------------|----------------|
-| 对抗算法茧房 | Algorithm deliberately excludes user interests |
-| 制造意外 | Weighted random favors "distant" domains |
-| 轻量 | Single pip install, no ML framework needed |
-| 真实场景 | Terminal-native, immediately usable by anyone |
-| 开放原子 | Multi-provider, works with ANY AI API |
-
 ---
 
 ## 中文

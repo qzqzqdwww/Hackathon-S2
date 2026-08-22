@@ -5,6 +5,7 @@ Usage:
     surprise-claude "AI, 音乐, 摄影"          # Direct mode
     surprise-claude config set                # Configure API settings
     surprise-claude config show               # Show current config
+    surprise-claude config clear              # Clear saved config
     surprise-claude --list-domains            # Show all domains
     surprise-claude --animation lightning     # Use lightning animation
 """
@@ -44,11 +45,25 @@ from .backend.config import (
 
 console = Console(safe_box=True)
 
+config_app = typer.Typer(name="config", help="管理 API 配置")
+
 app = typer.Typer(
     name="surprise-claude",
     add_completion=False,
     no_args_is_help=False,
 )
+app.add_typer(config_app, name="config")
+
+
+# ─── Default callback: interactive mode when no subcommand ──
+
+@app.callback(invoke_without_command=True)
+def default(ctx: typer.Context):
+    """Default: interactive mode when no subcommand is given."""
+    if ctx.invoked_subcommand is not None:
+        return
+    _interactive()
+
 
 # ─── Core workflow ─────────────────────────────────────────
 
@@ -64,7 +79,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
     try:
         pick = pick_domain(interests)
     except Exception as e:
-        console.print(f"[red]领域选择失败: {e}[reset]")
+        console.print(f"[red]领域选择失败: {e}[/red]")
         raise typer.Exit(1)
 
     if not regenerate:
@@ -114,6 +129,44 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         "surprise_score": pick.get("surprise_score", 0),
         "plan": plan,
     })
+
+
+# ─── Direct command ────────────────────────────────────────
+
+@app.command()
+def main(
+    interests: str = typer.Argument(
+        None,
+        help="你的兴趣领域（逗号分隔），例如: \"AI, 音乐, 摄影\"",
+    ),
+    animation: str = typer.Option("default", "--animation", "-a", help="鞭挞动画样式"),
+    speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
+    list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
+    list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
+    demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
+):
+    """[TARGET] Surprise Claude — 打破算法茧房，随机生成学习计划"""
+
+    if list_domains:
+        show_list_domains()
+    if list_animations:
+        show_list_animations()
+    if interests is None:
+        _interactive()
+        return
+
+    interest_list = [s.strip() for s in interests.replace("，", ",").split(",") if s.strip()]
+    if not interest_list:
+        console.print("[red]错误：请提供有效的兴趣领域。[/red]")
+        raise typer.Exit(1)
+
+    valid_anims = {"default", "lightning", "chain", "laser"}
+    if animation not in valid_anims:
+        console.print(f"[red]未知动画: {animation}[/red]")
+        console.print(f"可用: {', '.join(valid_anims)}")
+        raise typer.Exit(1)
+
+    _run(interest_list, animation, speed, demo_mode=demo)
 
 
 # ─── Helpers ───────────────────────────────────────────────
@@ -179,11 +232,7 @@ def show_list_animations():
     raise typer.Exit()
 
 
-# ─── Config Subcommand ────────────────────────────────────
-
-config_app = typer.Typer(name="config", help="管理 API 配置")
-app.add_typer(config_app, name="config")
-
+# ─── Config Subcommands ────────────────────────────────────
 
 @config_app.command("set")
 def config_set(
@@ -235,10 +284,10 @@ def config_show():
 def config_clear():
     """清除保存的 API 配置"""
     if not typer.confirm("确定要清除所有保存的 API 配置吗？"):
-        console.print(f"\n[dim]已取消。[/dim]")
+        console.print(f"\n[dim]已取消。[dim]")
         raise typer.Exit(0)
     clear_config()
-    console.print(f"\n[green]配置已清除。[reset]")
+    console.print(f"\n[green]配置已清除。[/green]")
 
 
 def _config_wizard():
@@ -348,43 +397,7 @@ def _generate_demo_plan() -> dict:
     return dict(_DEMO_PLAN)
 
 
-# ─── CLI Entry Point ───────────────────────────────────────
-
-@app.command()
-def main(
-    interests: str = typer.Argument(
-        None,
-        help="你的兴趣领域（逗号分隔），例如: \"AI, 音乐, 摄影\"",
-    ),
-    animation: str = typer.Option("default", "--animation", "-a", help="鞭挞动画样式"),
-    speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
-    list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
-    list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
-    demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
-):
-    """[TARGET] Surprise Claude — 打破算法茧房，随机生成学习计划"""
-
-    if list_domains:
-        show_list_domains()
-    if list_animations:
-        show_list_animations()
-    if interests is None:
-        _interactive()
-        return
-
-    interest_list = [s.strip() for s in interests.replace("，", ",").split(",") if s.strip()]
-    if not interest_list:
-        console.print("[red]错误：请提供有效的兴趣领域。[/red]")
-        raise typer.Exit(1)
-
-    valid_anims = {"default", "lightning", "chain", "laser"}
-    if animation not in valid_anims:
-        console.print(f"[red]未知动画: {animation}[/red]")
-        console.print(f"可用: {', '.join(valid_anims)}")
-        raise typer.Exit(1)
-
-    _run(interest_list, animation, speed, demo_mode=demo)
-
+# ─── Interactive REPL ──────────────────────────────────────
 
 def _interactive():
     """Interactive REPL mode."""

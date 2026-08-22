@@ -1,0 +1,3 @@
+typer>=0.9
+rich>=13.0
+anthropic>=0.39.0

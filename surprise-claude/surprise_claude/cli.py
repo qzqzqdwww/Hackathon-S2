@@ -63,7 +63,7 @@ app = typer.Typer(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False):
+def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, provider: str = "anthropic"):
     """Core generation workflow: animation -> API call -> display plan."""
     if not interests:
         console.print("[red]错误：请至少提供一个兴趣领域。[reset]")
@@ -86,6 +86,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         console.print()
         print_centered(f"你的兴趣: {', '.join(interests)}", color=GREEN)
         console.print()
+        print_centered(f"AI 引擎: {provider}", color=DIM)
         print_centered("即将为你随机揭示一个陌生领域...", color=YELLOW)
         console.print()
         time.sleep(0.8)
@@ -100,26 +101,34 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         if demo_mode:
             plan = _generate_demo_plan(interests, picked_domain)
         else:
+            os.environ.setdefault("LLM_PROVIDER", provider)
             plan = generate_plan(interests, picked_domain)
     except EnvironmentError as e:
         console.print(f"[red]{e}[reset]")
         console.print()
-        console.print("[green]$env:ANTHROPIC_API_KEY = \"sk-ant-...\"[reset]")
-        console.print("[green]surprise-claude \"AI, 音乐\"[reset]")
+        if provider == "openai":
+            console.print("[green]$env:OPENAI_API_KEY = \"sk-...\"[reset]")
+            console.print("[green]surprise-claude \"AI, 音乐\"[reset]")
+        else:
+            console.print("[green]$env:ANTHROPIC_API_KEY = \"sk-ant-...\"[reset]")
+            console.print("[green]surprise-claude \"AI, 音乐\"[reset]")
         raise typer.Exit(1)
     except Exception as e:
         error_msg = str(e)
         if "403" in error_msg or "forbidden" in error_msg.lower():
-            console.print("[red]API 调用失败 (403 Forbidden)[reset]")
+            console.print(f"[red]API 调用失败 (403 Forbidden) — [{provider}][reset]")
             console.print()
             console.print("可能的原因:")
             console.print("  1. API Key 无效或已过期")
-            console.print("  2. 账号未开通 Claude API 访问权限")
+            console.print("  2. 账号未开通 API 访问权限")
             console.print("  3. 账号余额不足")
             console.print()
             console.print("请检查:")
-            console.print("  - 前往 https://console.anthropic.com/ 确认 key 状态")
-            console.print("  - 确认账号有可用的 API 额度")
+            if provider == "openai":
+                console.print("  - 前往 https://platform.openai.com/ 确认 key 状态")
+            else:
+                console.print("  - 前往 https://console.anthropic.com/ 确认 key 状态")
+            console.print(f"  - 确认账号有可用的 API 额度")
         else:
             console.print(f"[red]生成失败: {e}[reset]")
         raise typer.Exit(1)
@@ -144,10 +153,11 @@ def show_help():
     console.print(f"\n{BOLD}用法:[reset]")
     console.print(f"  {GREEN}surprise-claude[reset]                          交互模式（提示输入兴趣领域）")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}<兴趣>[reset]                 直接生成（逗号分隔）")
-    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--list-domains[reset]           列出所有可选领域")
+    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--provider <name>[reset]        AI 引擎（anthropic / openai）")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--animation <name>[reset]       选择鞭挞动画样式")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--speed <n>[reset]              动画速度倍率（默认 1.0）")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--demo[reset]                  演示模式（无需 API Key）")
+    console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--list-providers[reset]         列出所有 AI 引擎")
     console.print(f"  {GREEN}surprise-claude[reset] {YELLOW}--help[reset]                  显示此帮助")
     console.print(f"\n{BOLD}动画样式:[reset]")
     console.print(f"  {GREEN}default[reset]    藤条（默认）")
@@ -195,6 +205,22 @@ def show_list_domains():
             for item in items:
                 console.print(f"    {DIM}-[reset] {item}")
             console.print()
+    raise typer.Exit()
+
+
+def show_list_providers():
+    """Show available AI providers."""
+    clear_screen()
+    console.print(f"\n{BOLD}{YELLOW}[AI] 可用 AI 引擎[reset]\n")
+    for name, desc, env_var, default_model in [
+        ("anthropic", "Claude API (Anthropic)", "ANTHROPIC_API_KEY", "claude-sonnet-4-20250514"),
+        ("openai", "OpenAI / compatible API", "OPENAI_API_KEY", "gpt-4o-mini"),
+    ]:
+        console.print(f"  {GREEN}{name:<12}[reset] {desc}")
+        console.print(f"  {DIM}            环境变量: {env_var}[reset]")
+        console.print(f"  {DIM}            默认模型: {default_model}[reset]\n")
+    console.print("[dim]切换: surprise-claude --provider openai \"你的兴趣\"[reset]")
+    console.print()
     raise typer.Exit()
 
 
@@ -307,8 +333,10 @@ def main(
     ),
     animation: str = typer.Option("default", "--animation", "-a", help="鞭挞动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
+    provider: str = typer.Option("anthropic", "--provider", "-p", help="AI 引擎: anthropic (Claude) 或 openai (GPT)"),
     list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
     list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
+    list_providers: bool = typer.Option(False, "--list-providers", help="列出所有可用 AI 引擎"),
     demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key，使用模拟 PLAN）"),
 ):
     """[TARGET] Surprise Claude — 打破算法茧房，随机生成学习计划"""
@@ -318,6 +346,9 @@ def main(
 
     if list_animations:
         show_list_animations()
+
+    if list_providers:
+        show_list_providers()
 
     if interests is None:
         _interactive()
@@ -334,7 +365,7 @@ def main(
         console.print(f"可用动画: {', '.join(valid_animations)}")
         raise typer.Exit(1)
 
-    _run(interest_list, animation, speed, demo_mode=demo)
+    _run(interest_list, animation, speed, demo_mode=demo, provider=provider)
 
 
 def _interactive():
@@ -342,10 +373,11 @@ def _interactive():
     clear_screen()
     console.print(f"\n{BOLD}{YELLOW}[TARGET] Surprise Claude[reset]")
     console.print(f"{DIM}打破算法茧房 · 随机学习计划生成器[reset]")
-    console.print(f"{DIM}输入你的兴趣领域，Claude 会刻意避开它们[reset]")
-    console.print(f"{DIM}输入 q 退出，n 换动画，c 换兴趣[reset]\n")
+    console.print(f"{DIM}输入你的兴趣领域，AI 会刻意避开它们[reset]")
+    console.print(f"{DIM}输入 q 退出，n 换动画，c 换兴趣，p 换 AI 引擎[reset]\n")
 
     animation = "default"
+    provider = "anthropic"
     raw = Prompt.ask(f"\n{GREEN}你的兴趣领域[reset]（逗号分隔）", default="")
     if not raw or raw.lower() in ("q", "quit", "exit"):
         console.print(f"\n{DIM}再见！[reset]")
@@ -361,12 +393,19 @@ def _interactive():
         if anim_choice in {"default", "lightning", "chain", "laser"}:
             animation = anim_choice
 
-    _run(interests, animation, 1.0)
+    prov_choice = Prompt.ask(
+        f"\n{CYAN}AI 引擎[reset] (anthropic / openai)",
+        default="anthropic",
+    )
+    if prov_choice.lower() in ("anthropic", "openai"):
+        provider = prov_choice.lower()
+
+    _run(interests, animation, 1.0, provider=provider)
 
     while True:
         console.print()
         action = Prompt.ask(
-            f"{DIM}按 {GREEN}Enter[reset]{DIM} 重新鞭挞，{CYAN}n[reset]{DIM} 换动画，{CYAN}c[reset]{DIM} 换兴趣，{RED}q[reset]{DIM} 退出[reset]",
+            f"{DIM}按 {GREEN}Enter[reset]{DIM} 重新鞭挞，{YELLOW}n[reset]{DIM} 换动画，{CYAN}p[reset]{DIM} 换引擎，{CYAN}c[reset]{DIM} 换兴趣，{RED}q[reset]{DIM} 退出[reset]",
             default="",
         ).strip().lower()
 
@@ -384,8 +423,15 @@ def _interactive():
             )
             if anim_choice in {"default", "lightning", "chain", "laser"}:
                 animation = anim_choice
+        elif action == "p":
+            prov_choice = Prompt.ask(
+                f"\n{CYAN}AI 引擎[reset] (anthropic / openai)",
+                default=provider,
+            )
+            if prov_choice.lower() in ("anthropic", "openai"):
+                provider = prov_choice.lower()
 
-        _run(interests, animation, 1.0, regenerate=True)
+        _run(interests, animation, 1.0, regenerate=True, provider=provider)
 
 
 if __name__ == "__main__":

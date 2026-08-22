@@ -13,7 +13,23 @@ Usage with Claude Desktop:
           "command": "python",
           "args": ["-m", "surprise_claude.backend.mcp_server"],
           "env": {
+            "LLM_PROVIDER": "anthropic",
             "ANTHROPIC_API_KEY": "sk-ant-..."
+          }
+        }
+      }
+    }
+
+Or with OpenAI:
+    {
+      "mcpServers": {
+        "surprise-claude": {
+          "command": "python",
+          "args": ["-m", "surprise_claude.backend.mcp_server"],
+          "env": {
+            "LLM_PROVIDER": "openai",
+            "OPENAI_API_KEY": "sk-...",
+            "OPENAI_MODEL": "gpt-4o-mini"
           }
         }
       }

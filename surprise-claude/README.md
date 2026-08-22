@@ -30,8 +30,10 @@ Or clone and install:
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-claude
 
-# 2. Install
+# 2. Install with your preferred AI provider
 pip install -e .
+pip install ".[anthropic]"   # Claude API (default)
+pip install ".[openai]"       # OpenAI / compatible API
 ```
 
 ### Usage
@@ -42,6 +44,9 @@ surprise-claude
 
 # Direct mode with interests
 surprise-claude "AI, 音乐, 摄影"
+
+# Use OpenAI instead of Claude
+surprise-claude --provider openai "AI, 音乐, 摄影"
 
 # Choose animation style
 surprise-claude -a lightning "编程, 设计"
@@ -54,6 +59,9 @@ surprise-claude --list-domains
 
 # List animation styles
 surprise-claude --list-animations
+
+# List AI providers
+surprise-claude --list-providers
 ```
 
 ### Set API Key
@@ -61,9 +69,11 @@ surprise-claude --list-animations
 ```bash
 # Windows PowerShell
 $env:ANTHROPIC_API_KEY = "sk-ant-..."
-
 # macOS / Linux
 export ANTHROPIC_API_KEY="sk-ant-..."
+
+# For OpenAI
+$env:OPENAI_API_KEY = "sk-..."
 ```
 
 ### Demo
@@ -160,11 +170,40 @@ surprise-claude/
 │   └── backend/
 │       ├── __init__.py
 │       ├── domain_picker.py  # 49-domain pool + weighted random
-│       ├── plan_generator.py # Claude API + engineered prompt
-│       └── mcp_server.py     # MCP stdio server (Claude Desktop)
+│       ├── plan_generator.py # Multi-provider LLM (Claude / OpenAI)
+│       └── mcp_server.py     # MCP stdio server
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
+```
+
+### AI Providers
+
+Surprise Claude supports multiple LLM backends:
+
+| Provider | Env vars | Default model |
+|----------|----------|---------------|
+| **Anthropic Claude** (default) | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
+| **OpenAI / compatible** | `OPENAI_API_KEY` + optional `OPENAI_BASE_URL` | `gpt-4o-mini` |
+
+```bash
+# Use Claude (default)
+surprise-claude "AI, 音乐, 摄影"
+
+# Use OpenAI
+surprise-claude --provider openai "AI, 音乐, 摄影"
+
+# Or set via env var
+$env:LLM_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "sk-..."
+surprise-claude "AI, 音乐, 摄影"
+```
+
+Install with provider support:
+```bash
+pip install "surprise-claude[anthropic]"    # Claude only
+pip install "surprise-claude[openai]"       # OpenAI only
+pip install "surprise-claude[anthropic,openai]"  # Both
 ```
 
 ### Track 03 Alignment
@@ -175,6 +214,7 @@ surprise-claude/
 | 制造意外 | Weighted random favors "distant" domains |
 | 轻量 | Single pip install, no ML framework needed |
 | 真实场景 | Terminal-native, immediately usable by anyone |
+| 开放原子 | Multi-provider support (Claude + OpenAI + compatible) |
 
 ---
 
@@ -198,26 +238,36 @@ pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-claude
 pip install -e .
+
+# 安装 AI 引擎支持（至少选一个）
+pip install ".[anthropic]"   # Claude API
+pip install ".[openai]"      # OpenAI API
 ```
 
 ### 设置 API Key
 
 ```bash
+# Claude (默认)
 # Windows PowerShell
 $env:ANTHROPIC_API_KEY = "sk-ant-..."
-
 # macOS / Linux
 export ANTHROPIC_API_KEY="sk-ant-..."
+
+# OpenAI
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-..."
+# macOS / Linux
+export OPENAI_API_KEY="sk-..."
 ```
 
 ### 运行
 
 ```bash
-# 交互模式（推荐）
-surprise-claude
-
-# 直接输入兴趣领域
+# 使用 Claude（默认）
 surprise-claude "AI, 音乐, 摄影"
+
+# 使用 OpenAI
+surprise-claude --provider openai "AI, 音乐, 摄影"
 
 # 演示模式（无需 API Key）
 surprise-claude --demo "AI, 音乐, 摄影"
@@ -232,6 +282,9 @@ surprise-claude
 # 直接输入兴趣
 surprise-claude "AI, 音乐, 摄影"
 
+# 使用 OpenAI 引擎
+surprise-claude --provider openai "AI, 音乐, 摄影"
+
 # 选择动画
 surprise-claude -a lightning "编程, 设计"
 
@@ -245,7 +298,7 @@ surprise-claude --list-domains
 |------|------|
 | CLI 框架 | Typer |
 | 终端 UI | Rich |
-| AI 引擎 | Claude API (Anthropic SDK) |
+| AI 引擎 | Claude API / OpenAI API（可切换） |
 | 动画系统 | 纯终端 ANSI 字符动画 |
 | MCP 集成 | stdio JSON-RPC 2.0 |
 

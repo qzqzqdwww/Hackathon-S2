@@ -3,14 +3,13 @@
 Works with:
 - Anthropic Claude (messages.create API)
 - OpenAI (chat.completions API)
-- DeepSeek, Zhipu GLM, StepFun, Doubao, SiliconFlow, etc. (OpenAI-compatible)
+- DeepSeek, Zhipu GLM, StepFun, Doubao, SiliconFlow, etc.
 - Any custom OpenAI-compatible endpoint
 
-Priority: env vars > config file > defaults
+Priority: env vars > config file > built-in defaults
 """
 
 import json
-import os
 
 from .config import get_effective_config, get_provider_config, mask_key
 
@@ -93,21 +92,17 @@ def _strip_markdown_fences(content: str) -> str:
 
 
 def get_current_provider() -> str:
-    """Get the currently configured provider name."""
-    cfg = get_effective_config()
-    return cfg["provider"]
+    return get_effective_config()["provider"]
 
 
 def get_config_summary() -> dict:
-    """Get a display-safe summary of current config."""
     cfg = get_effective_config()
     provider = cfg["provider"]
     known = get_provider_config(provider)
-
     return {
         "provider": provider,
         "api_key": mask_key(cfg["api_key"]),
-        "base_url": cfg["base_url"] or known["base_url"] or "(default)",
+        "base_url": cfg["base_url"] or known["base_url"] or "(not set)",
         "model": cfg["model"] or known["model"] or "(not set)",
         "config_file": cfg.get("config_file", ""),
     }
@@ -116,34 +111,10 @@ def get_config_summary() -> dict:
 def generate_plan(interests: list, picked_domain: str) -> dict:
     """Generate a surprise learning plan via LLM API.
 
-    Supports:
-    - Anthropic Claude (provider=anthropic)
-    - OpenAI (provider=openai)
-    - DeepSeek (provider=deepseek)
-    - Zhipu GLM (provider=zhipu)
-    - StepFun (provider=stepfun)
-    - Doubao (provider=doubao)
-    - SiliconFlow (provider=siliconflow)
-    - Any custom OpenAI-compatible API (provider=custom, set base_url)
+    Supports: Claude, OpenAI, DeepSeek, Zhipu GLM, StepFun, Doubao,
+    SiliconFlow, and any OpenAI-compatible API.
 
-    Priority for settings: env vars > config file > defaults
-
-    Parameters
-    ----------
-    interests : list[str]
-        The user's stated areas of interest.
-    picked_domain : str
-        The randomly selected domain (from domain_picker).
-
-    Returns
-    -------
-    dict
-        Structured plan matching the JSON schema.
-
-    Raises
-    ------
-    EnvironmentError
-        If the required API key is not set.
+    Settings priority: env vars > config file > built-in defaults.
     """
     cfg = get_effective_config()
     provider = cfg["provider"]
@@ -159,6 +130,15 @@ def generate_plan(interests: list, picked_domain: str) -> dict:
             f"  方式二：设置环境变量 {known['key_env']}=YOUR_KEY"
         )
 
+    if provider != "anthropic" and not base_url:
+        known = get_provider_config(provider)
+        base_url = known["base_url"]
+        if not base_url:
+            raise EnvironmentError(
+                f"API 地址未设置。\n"
+                f"  运行 surprise-claude config set --provider {provider} --base-url YOUR_URL"
+            )
+
     user_message = (
         f"My current interests are: {', '.join(interests)}.\n"
         f"Surprise me with a learning plan for: {picked_domain}"
@@ -167,11 +147,6 @@ def generate_plan(interests: list, picked_domain: str) -> dict:
     if provider == "anthropic":
         content = _call_anthropic(api_key, model, user_message)
     else:
-        # All other providers use OpenAI-compatible API
-        if not base_url:
-            known = get_provider_config(provider)
-            base_url = known["base_url"]
         content = _call_openai_compatible(api_key, model, base_url, user_message)
 
-    content = _strip_markdown_fences(content)
-    return json.loads(content)
+    return json.loads(_strip_markdown_fences(content))

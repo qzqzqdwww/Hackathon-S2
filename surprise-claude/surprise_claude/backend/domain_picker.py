@@ -71,30 +71,31 @@ DOMAINS = [
 
 
 def pick_domain(excluded: list) -> dict:
-    """Pick a random domain that is NOT in the excluded list.
+    """Pick a random domain NOT semantically close to excluded interests.
 
-    Parameters
-    ----------
-    excluded : list[str]
-        Domains (or keywords) the user has already stated interest in.
-
-    Returns
-    -------
-    dict
-        {"domain": str, "surprise_score": int}
+    Excludes domains that match any excluded keyword (Chinese or English),
+    then uses weighted random to favor domains that are semantically distant.
     """
     import random
 
-    excluded_lower = {kw.lower() for kw in excluded}
+    excluded_lower = {kw.lower().strip() for kw in excluded if kw.strip()}
 
     candidates = []
     for domain in DOMAINS:
-        keyword = domain.split("(")[-1].rstrip(")").lower() if "(" in domain else domain.lower()
-        if keyword not in excluded_lower:
-            score = _distance_score(keyword, excluded_lower)
-            candidates.append({"domain": domain, "surprise_score": score})
+        # Extract English keyword from parentheses, e.g. "陶艺 (Pottery)" -> "pottery"
+        en_keyword = domain.split("(")[-1].rstrip(")").lower() if "(" in domain else domain.lower()
+        # Also check the Chinese/raw name (before the parenthesis)
+        raw_name = domain.split("(")[0].strip().lower()
+
+        # Skip if any excluded keyword matches the domain
+        if any(kw in en_keyword or kw in raw_name for kw in excluded_lower):
+            continue
+
+        score = _distance_score(en_keyword, excluded_lower)
+        candidates.append({"domain": domain, "surprise_score": score})
 
     if not candidates:
+        # Fallback: pick randomly from all domains
         domain = random.choice(DOMAINS)
         return {"domain": domain, "surprise_score": 0}
 
@@ -104,14 +105,22 @@ def pick_domain(excluded: list) -> dict:
 
 
 def _distance_score(keyword: str, excluded: set) -> int:
-    """Heuristic distance from excluded keywords."""
-    tech_keywords = {"ai", "programming", "software", "coding", "machine learning",
-                     "data", "web", "app", "computer", "tech", "crypto", "blockchain"}
-    art_keywords = {"art", "music", "design", "painting", "drawing", "photo", "film"}
-    science_keywords = {"physics", "chemistry", "biology", "math", "astronomy", "space"}
-    craft_keywords = {"craft", "making", "build", "wood", "pottery", "weave"}
+    """Score how semantically distant a domain keyword is from excluded interests.
 
-    fields = [tech_keywords, art_keywords, science_keywords, craft_keywords]
+    Higher score = more surprising (less related to user's interests).
+    Base 10, minus 3 for each overlapping conceptual field.
+    """
+    tech_kw = {"ai", "programming", "software", "coding", "machine learning",
+               "data", "web", "app", "computer", "tech", "crypto", "blockchain",
+               "code", "developer", "算法", "编程", "代码", "人工智能"}
+    art_kw = {"art", "music", "design", "painting", "drawing", "photo", "film",
+              "gallery", "sound", "creative", "美术", "音乐", "设计", "摄影"}
+    science_kw = {"physics", "chemistry", "biology", "math", "astronomy", "space",
+                  "research", "lab", "科学", "生物", "物理", "化学", "天文"}
+    craft_kw = {"craft", "making", "build", "wood", "pottery", "weave",
+                "手工", "制作", "编织", "陶艺"}
+
+    fields = [tech_kw, art_kw, science_kw, craft_kw]
 
     def in_field(kw, field):
         return any(f in kw for f in field)
@@ -120,6 +129,6 @@ def _distance_score(keyword: str, excluded: set) -> int:
     for field in fields:
         if in_field(keyword, field):
             if any(in_field(ex, field) for ex in excluded):
-                score -= 5
+                score -= 3
 
     return max(score, 1)

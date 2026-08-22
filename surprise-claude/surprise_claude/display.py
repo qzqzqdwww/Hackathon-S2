@@ -4,7 +4,7 @@ Provides:
 - ASCII art Claude figure with animated expressions
 - Frame-based whip animation system (multiple styles)
 - Rich terminal output for plan display
-- Windows-safe: uses Rich markup tags instead of raw ANSI
+- Windows-safe: uses sys.stdout.write for ANSI, Rich markup for panels
 """
 
 import time
@@ -13,8 +13,7 @@ import os
 import re
 from typing import List, Tuple
 
-# ─── ANSI helpers (for animation system only) ──────────────
-# These are written directly to sys.stdout and go through colorama on Windows.
+# ─── ANSI helpers (written to sys.stdout for colorama conversion on Windows) ──
 
 def _ansi(code: str) -> str:
     return f"\033[{code}m"
@@ -40,44 +39,24 @@ CURSOR_UP = "\033[F"
 SAVE_CURSOR = "\033[s"
 RESTORE_CURSOR = "\033[u"
 
-# ─── Rich markup tags (for console output) ─────────────────
-# Use these with console.print() — Rich handles them cross-platform.
-# DO NOT use raw ANSI constants (BOLD, RED, etc.) with console.print().
-
-_TAG_MAP = {
-    "BOLD": "bold",
-    "DIM": "dim",
-    "RED": "red",
-    "GREEN": "green",
-    "YELLOW": "yellow",
-    "BLUE": "blue",
-    "MAGENTA": "magenta",
-    "CYAN": "cyan",
-    "WHITE": "white",
-    "ORANGE": "orange1",
-    "RESET": "reset",
-}
-
+# ─── Rich output helpers ──────────────────────────────────
 
 def rprint(text: str = "") -> None:
-    """Print text with Rich markup, safely on all platforms."""
+    """Print text with Rich markup, with plain-text fallback."""
     try:
         from rich.console import Console
-        console = Console()
-        console.print(text)
+        Console().print(text)
     except ImportError:
-        # Fallback: strip Rich tags and print plain
         plain = re.sub(r'\[/?[a-z ]+\]', '', text)
         print(plain)
 
 
 def rpanel(text: str, border: str = "dim", title: str = "") -> None:
-    """Print text in a Rich panel."""
+    """Print text in a Rich panel, with plain fallback."""
     try:
         from rich.console import Console
         from rich.panel import Panel
-        console = Console()
-        console.print(Panel(text, border_style=border, title=title, padding=(0, 1)))
+        Console().print(Panel(text, border_style=border, title=title, padding=(0, 1)))
     except ImportError:
         print(text)
 
@@ -155,8 +134,7 @@ def get_animation(name: str) -> List[Tuple[str, int]]:
         return _chain_frames()
     elif name in ("laser", "激光"):
         return _laser_frames()
-    else:
-        return _default_frames()
+    return _default_frames()
 
 
 def _default_frames() -> List[Tuple[str, int]]:
@@ -184,11 +162,11 @@ def _lightning_frames() -> List[Tuple[str, int]]:
 
 
 def _chain_frames() -> List[Tuple[str, int]]:
-    chain_color = DIM + WHITE
+    chain = DIM + WHITE
     return [
-        (f"{_center(_whip_line(22, 6, chain_color))}\n{_center(CLAUDE_NORMAL)}", 150),
-        (f"{_center(_whip_line(16, 4, chain_color))}\n{_center(CLAUDE_NORMAL)}", 80),
-        (f"{_center(_whip_line(12, 3, chain_color))}\n{_center(CLAUDE_NORMAL)}", 60),
+        (f"{_center(_whip_line(22, 6, chain))}\n{_center(CLAUDE_NORMAL)}", 150),
+        (f"{_center(_whip_line(16, 4, chain))}\n{_center(CLAUDE_NORMAL)}", 80),
+        (f"{_center(_whip_line(12, 3, chain))}\n{_center(CLAUDE_NORMAL)}", 60),
         (f"{BOLD}{WHITE}{_center('### * BOOM * ###')}{RESET}\n{_center(CLAUDE_HIT)}", 200),
         (f"{_center(CLAUDE_DAZED)}\n{_center(_particles(4, WHITE))}", 120),
         (f"{_center(CLAUDE_SPARKLE)}\n{DIM}{_center('  ###')}{RESET}", 250),
@@ -197,12 +175,12 @@ def _chain_frames() -> List[Tuple[str, int]]:
 
 
 def _laser_frames() -> List[Tuple[str, int]]:
-    laser_color = CYAN
+    laser = CYAN
     return [
-        (f"{laser_color}{_center('==========')}{RESET}\n{_center(CLAUDE_NORMAL)}", 80),
-        (f"{laser_color}{_center('============')}{RESET}\n{BOLD}{_center('[TARGETING...]')}{RESET}\n{_center(CLAUDE_NORMAL)}", 100),
-        (f"{BOLD}{laser_color}{_center('===============')}{RESET}\n{RED}{_center('*')}{RESET}\n{_center(CLAUDE_HIT)}", 150),
-        (f"{laser_color}{_center('=====')}{RESET}\n{_center(CLAUDE_DAZED)}\n{_center(_particles(3, laser_color))}", 100),
+        (f"{laser}{_center('==========')}{RESET}\n{_center(CLAUDE_NORMAL)}", 80),
+        (f"{laser}{_center('============')}{RESET}\n{BOLD}{_center('[TARGETING...]')}{RESET}\n{_center(CLAUDE_NORMAL)}", 100),
+        (f"{BOLD}{laser}{_center('===============')}{RESET}\n{RED}{_center('*')}{RESET}\n{_center(CLAUDE_HIT)}", 150),
+        (f"{laser}{_center('=====')}{RESET}\n{_center(CLAUDE_DAZED)}\n{_center(_particles(3, laser))}", 100),
         (f"{CYAN}{_center('* * *')}{RESET}\n{_center(CLAUDE_SPARKLE)}", 250),
         (f"{_center(CLAUDE_NORMAL)}\n{DIM}{_center('  *')}{RESET}", 150),
     ]
@@ -211,7 +189,8 @@ def _laser_frames() -> List[Tuple[str, int]]:
 # ─── Animation Player ──────────────────────────────────────
 
 def play_animation(name: str = "default", speed: float = 1.0) -> None:
-    """Play a terminal animation using raw ANSI (goes through colorama on Windows)."""
+    """Play a terminal animation. ANSI codes go through sys.stdout.write
+    so colorama can convert them on Windows."""
     frames = get_animation(name)
     if not frames:
         return
@@ -250,24 +229,20 @@ def display_plan(data: dict) -> None:
 
         console = Console()
 
-        # Header
         header = Text()
         header.append(f"\n[TARGET] {domain}\n", style="bold orange1")
         if tagline:
             header.append(f"{tagline}\n", style="italic red")
         console.print(Panel(header, border_style="orange1", padding=(1, 2)))
 
-        # Why interesting
         console.print(f"\n[bold yellow][SEARCH] 为什么学这个[/bold yellow]")
         console.print(Panel(why, border_style="dim", padding=(0, 1)))
 
-        # Connections
         if connections:
             console.print(f"\n[bold yellow][BRIDGE] 与你兴趣的意外关联[/bold yellow]")
             for conn in connections:
                 console.print(f"  [cyan]->[/cyan] {conn}")
 
-        # Learning path
         if learning_path:
             console.print(f"\n[bold yellow][MAP] 四周学习路径[/bold yellow]")
             for week in learning_path:
@@ -284,7 +259,6 @@ def display_plan(data: dict) -> None:
 
                 console.print(Panel(week_text.strip(), border_style="blue", padding=(0, 1)))
 
-        # Surprise factor
         if surprise:
             console.print(f"\n[bold magenta][SPARK] 意外之喜[/bold magenta]")
             console.print(Panel(
@@ -332,6 +306,7 @@ def _display_plan_plain(plan, domain, tagline, why, connections, learning_path, 
 
 
 # ─── Utility Functions ─────────────────────────────────────
+# These use sys.stdout.write so colorama can intercept on Windows.
 
 def clear_line() -> None:
     sys.stdout.write("\033[2K\r")
@@ -349,7 +324,8 @@ def clear_screen() -> None:
 
 
 def print_centered(text: str, color: str = "") -> None:
-    """Print centered text with optional ANSI color."""
+    """Print centered text with optional ANSI color.
+    Uses sys.stdout.write so colorama converts ANSI on Windows."""
     try:
         width = os.get_terminal_size().columns
     except OSError:
@@ -357,6 +333,7 @@ def print_centered(text: str, color: str = "") -> None:
     for line in text.split("\n"):
         padded = line.center(width)
         if color:
-            print(f"{color}{padded}{RESET}")
+            sys.stdout.write(f"{color}{padded}{RESET}\n")
         else:
-            print(padded)
+            sys.stdout.write(padded + "\n")
+    sys.stdout.flush()

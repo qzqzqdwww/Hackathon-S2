@@ -17,23 +17,44 @@ You tell it your interests — it **deliberately excludes** them, then randomly 
 
 **The best discoveries come from accidents.**
 
+### Privacy
+
+API keys are stored locally in `~/.surprise-claude/config.json` (plaintext, git-ignored).
+No data is sent anywhere except to your chosen AI provider's API. Your interests
+and generated plans are never logged or shared.
+
 ### Install
 
 ```bash
+# Direct install (requires git)
 pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
-```
 
-Or clone and install:
-
-```bash
-# 1. Clone
+# Or clone and install
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-claude
-
-# 2. Install with your preferred AI provider
 pip install -e .
-pip install ".[anthropic]"   # Claude API (default)
-pip install ".[openai]"       # OpenAI / compatible API
+```
+
+### Configure API
+
+Works with **any OpenAI-compatible API**: Claude, DeepSeek, Zhipu GLM, StepFun, Doubao, SiliconFlow, OpenAI, etc.
+
+**Recommended — interactive setup:**
+```bash
+surprise-claude config set
+# Follow prompts: select engine → enter API Key → save
+```
+
+**Or set environment variable directly:**
+```bash
+export DEEPSEEK_API_KEY="sk-..."
+```
+
+Install the OpenAI SDK (needed for all non-Claude providers):
+```bash
+pip install ".[openai]"     # DeepSeek, Zhipu, StepFun, Doubao, etc.
+pip install ".[anthropic]"  # Claude only
+pip install ".[all]"        # both
 ```
 
 ### Usage
@@ -42,42 +63,22 @@ pip install ".[openai]"       # OpenAI / compatible API
 # Interactive mode (recommended)
 surprise-claude
 
-# Direct mode with interests
+# Direct mode
 surprise-claude "AI, 音乐, 摄影"
 
-# Use OpenAI instead of Claude
-surprise-claude --provider openai "AI, 音乐, 摄影"
+# Demo mode (no API key needed)
+surprise-claude --demo "AI, 音乐, 摄影"
 
-# Choose animation style
-surprise-claude -a lightning "编程, 设计"
-
-# Adjust animation speed
-surprise-claude -s 2.0 "烹饪, 旅行"
-
-# List all available domains
+# List all 70 domains
 surprise-claude --list-domains
 
 # List animation styles
 surprise-claude --list-animations
 
-# List AI providers
-surprise-claude --list-providers
-
-# Configure API
+# Manage API config
 surprise-claude config set
 surprise-claude config show
-```
-
-### Set API Key
-
-```bash
-# Windows PowerShell
-$env:ANTHROPIC_API_KEY = "sk-ant-..."
-# macOS / Linux
-export ANTHROPIC_API_KEY="sk-ant-..."
-
-# For OpenAI
-$env:OPENAI_API_KEY = "sk-..."
+surprise-claude config clear
 ```
 
 ### Demo
@@ -92,13 +93,13 @@ $ surprise-claude "AI, 音乐, 摄影"
 
                       即将为你随机揭示一个陌生领域...
 
-                               |     
-                                |    
-                                 |   
-                                  |  
-                                   | 
+                               |
+                                |
+                                 |
+                                  |
+                                   |
                                     \
-                      /\_/                     
+                      /\_/
                     ( o.o )         =======
                       > ^ <                |
                     /|   |\                |
@@ -106,18 +107,18 @@ $ surprise-claude "AI, 音乐, 摄影"
                                             |
                                             |
                                             |
-                               * BOOM *      
-                      /\_/                     
-                    ( >o< )                   
-                      > w <                   
-                    /|   |\                  
-                   (_|   |_)                 
-                *   +   .   :       * * *    
-                      ( *.* )                 
-                        > ^ <                 
-                      /|   |\                
-                     (_|   |_)               
-                               *             
+                               * BOOM *
+                      /\_/
+                    ( >o< )
+                      > w <
+                    /|   |\
+                   (_|   |_)
+                *   +   .   :       * * *
+                      ( *.* )
+                        > ^ <
+                      /|   |\
+                     (_|   |_)
+                               *
 
 [TARGET] 养蜂 (Beekeeping)
 "The rhythm of a hive is the tempo your music practice has been missing"
@@ -135,7 +136,7 @@ $ surprise-claude "AI, 音乐, 摄影"
 [BRIDGE] 与你兴趣的意外关联
   -> 养蜂的"摇摆舞"通信协议是自然界最原始的舞蹈形式
   -> 微距摄影技巧可以直接迁移到蜂巢内部拍摄
-  -> AI 蜂群算法（Swarm Intelligence）正是受此启发
+  -> AI蜂群算法（Swarm Intelligence）正是受此启发
 
 [MAP] 四周学习路径
 ┌──────────────────────────────────────────────┐
@@ -153,14 +154,18 @@ $ surprise-claude "AI, 音乐, 摄影"
 └──────────────────────────────────────────────┘
 ```
 
-### Animation Styles
+### Supported AI Providers
 
-| Style | Description |
-|-------|-------------|
-| `default` | 藤条 (classic whip + golden particles) |
-| `lightning` | 闪电 (electric bolts + instant strike) |
-| `chain` | 链条 (metallic chain + heavy impact) |
-| `laser` | 激光 (targeting + instant hit + trail) |
+| Provider | Default model |
+|----------|---------------|
+| Anthropic Claude | claude-sonnet-4-20250514 |
+| OpenAI | gpt-4o-mini |
+| DeepSeek | deepseek-chat |
+| Zhipu GLM | glm-4-plus |
+| StepFun | step-2-16k |
+| Doubao | doubao-pro-32k |
+| SiliconFlow | Qwen/Qwen2.5-72B-Instruct |
+| Custom OpenAI-compatible | (you specify) |
 
 ### Architecture
 
@@ -173,46 +178,13 @@ surprise-claude/
 │   ├── display.py           # Terminal animations + plan display
 │   └── backend/
 │       ├── __init__.py
-│       ├── domain_picker.py  # 49-domain pool + weighted random
-│       ├── plan_generator.py # Multi-provider LLM (Claude / OpenAI)
-│       └── mcp_server.py     # MCP stdio server
+│       ├── config.py        # Persistent config (~/.surprise-claude/config.json)
+│       ├── domain_picker.py # 70-domain pool + weighted random
+│       ├── provider.py      # Multi-provider LLM client
+│       └── mcp_server.py    # MCP stdio server
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
-```
-
-### AI Providers
-
-Surprise Claude works with **any OpenAI-compatible API** (DeepSeek, Zhipu, StepFun, Doubao, SiliconFlow, etc.) plus Claude.
-
-| Provider | Config key | Default model |
-|----------|-----------|---------------|
-| **Anthropic Claude** | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` |
-| **OpenAI** | `OPENAI_API_KEY` | `gpt-4o-mini` |
-| **DeepSeek** | `DEEPSEEK_API_KEY` | `deepseek-chat` |
-| **Zhipu GLM** | `ZHIPU_API_KEY` | `glm-4-plus` |
-| **StepFun** | `STEPFUN_API_KEY` | `step-2-16k` |
-| **Doubao** | `DOUBAO_API_KEY` | `doubao-pro-32k` |
-| **SiliconFlow** | `SILICONFLOW_API_KEY` | `Qwen/Qwen2.5-72B-Instruct` |
-| **Custom** | `API_KEY` | (you specify) |
-
-**Quick setup (recommended):**
-```bash
-surprise-claude config set
-# Follow the interactive prompts
-```
-
-**Or use environment variables directly:**
-```bash
-export DEEPSEEK_API_KEY="sk-..."
-surprise-claude "AI, 音乐, 摄影"
-```
-
-Install with OpenAI SDK support (needed for all non-Claude providers):
-```bash
-pip install ".[openai]"       # for DeepSeek, Zhipu, StepFun, etc.
-pip install ".[anthropic]"    # for Claude
-pip install ".[all]"          # both
 ```
 
 ### Track 03 Alignment
@@ -223,7 +195,7 @@ pip install ".[all]"          # both
 | 制造意外 | Weighted random favors "distant" domains |
 | 轻量 | Single pip install, no ML framework needed |
 | 真实场景 | Terminal-native, immediately usable by anyone |
-| 开放原子 | Multi-provider support (Claude + OpenAI + compatible) |
+| 开放原子 | Multi-provider, works with ANY AI API |
 
 ---
 
@@ -240,30 +212,27 @@ Surprise Claude 是一个**终端原生**的 CLI 工具，专门用来打破你�
 ### 快速开始
 
 ```bash
-# 方式一：直接安装（需要 git）
-pip install git+https://github.com/qzqzqdwww/Hackathon-S2.git
-
-# 方式二：克隆后安装
+# 克隆项目
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-claude
 pip install -e .
 
-# 安装 AI 引擎支持
-pip install ".[openai]"       # 支持 Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等
-pip install ".[anthropic]"    # 仅 Claude（单独安装）
+# 安装 AI 引擎 SDK（至少选一个）
+pip install ".[openai]"       # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI
+pip install ".[anthropic]"    # Claude
 ```
 
 ### 配置 API
 
 支持任意 AI 引擎：Claude、DeepSeek、智谱 GLM、阶跃星辰、豆包、SiliconFlow 等。
 
-**推荐方式 — 交互式配置：**
+**推荐 — 交互式配置：**
 ```bash
 surprise-claude config set
 # 按提示选择引擎 → 输入 API Key → 保存
 ```
 
-**查看当前配置：**
+**查看配置：**
 ```bash
 surprise-claude config show
 ```
@@ -277,11 +246,9 @@ surprise-claude config clear
 ```bash
 # Windows PowerShell
 $env:DEEPSEEK_API_KEY = "sk-..."
-$env:OPENAI_API_KEY = "sk-..."
 
 # macOS / Linux
 export DEEPSEEK_API_KEY="sk-..."
-export OPENAI_API_KEY="sk-..."
 ```
 
 ### 运行
@@ -295,26 +262,12 @@ surprise-claude "AI, 音乐, 摄影"
 
 # 演示模式（无需 API Key）
 surprise-claude --demo "AI, 音乐, 摄影"
-```
-
-### 使用方法
-
-```bash
-# 交互模式（推荐，可持续生成）
-surprise-claude
-
-# 直接输入兴趣
-surprise-claude "AI, 音乐, 摄影"
-
-# 选择动画
-surprise-claude -a lightning "编程, 设计"
 
 # 列出所有领域
 surprise-claude --list-domains
 
-# 配置 API
-surprise-claude config set
-surprise-claude config show
+# 列出动画样式
+surprise-claude --list-animations
 ```
 
 ### 技术栈
@@ -323,7 +276,7 @@ surprise-claude config show
 |------|------|
 | CLI 框架 | Typer |
 | 终端 UI | Rich |
-| AI 引擎 | Claude API / OpenAI API（可切换） |
+| AI 引擎 | 任意 API（Claude / DeepSeek / 智谱 / 阶跃 / 豆包 等） |
 | 动画系统 | 纯终端 ANSI 字符动画 |
 | MCP 集成 | stdio JSON-RPC 2.0 |
 

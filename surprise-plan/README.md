@@ -169,12 +169,12 @@ surprise-plan/
 | 版本 | 领域数 | 测试数 | 核心特性 | 下载方式 |
 |------|--------|--------|----------|---------|
 | **v2** (最新) | 159 | 80 | 8k token 深度生成 + 随机 seed + 多格式导出 + 交互导出 | `git clone` 默认获取 |
-| **main** | 159 | 80 | 同 v2（main 分支即 v2） | `git clone` 默认获取 |
-| **v1** | 49 | 0 | 基础版本，单次生成，固定内容 | `git clone --branch v1 <url>` |
+| **v1** | 159 | 68 | 回答"内容少+无互动"：丰富生成内容 + 交互模式 + 难度选择 + 随机 demo | `git clone --branch v1 <url>` |
+| **v0** | 49 | 0 | 基础版本，固定内容，无交互 | `git clone --branch v0 <url>` |
 
-### v2 更新内容
+### v2 更新内容（对比 v1）
 
-#### 生成质量大幅提升
+#### 生成质量再提升
 
 - **`max_tokens` 翻倍**：4096 → 8192，给模型更大输出空间
 - **System Prompt 全面强化**，每个字段要求更具体、更深入：
@@ -200,8 +200,6 @@ surprise-plan/
 #### 交互模式增强
 
 - 新增 `e`（导出）快捷键
-- 难度选择：支持 轻松入门 / 标准 / 深入挑战 三档
-- 交互循环可重复生成（Enter）、深入探索（d）、切换动画（n）、改兴趣（c）、导出（e）、退出（q）
 - `_run()` 返回 `(pick, plan)` 元组，交互循环复用上次结果用于导出
 
 #### 测试覆盖
@@ -212,23 +210,40 @@ surprise-plan/
 
 ---
 
-### v1 → v2 迁移摘要
+### v1 更新内容（对比 v0）
 
-| 方面 | v1 | v2 |
-|------|----|----|
-| 领域池 | 49 | 159 |
-| max_tokens | 4096 | 8192 |
-| why_interesting | 4-5 句 | 6-8 句 |
-| connections | 3-4 条 | 4-5 条 |
-| key_terms | 5-6 个 | 6-8 个 |
-| fun_fact | 1 句 | 2-3 句 |
-| activities/周 | 3-4 个 | 4-5 个 |
-| resources/周 | 2-3 个 | 3-4 个 |
-| surprise_factor | 1 句 | 2-3 句 |
-| 随机性 | 无 | 随机 seed 注入 |
-| 导出功能 | 无 | .json / .md / .txt / .html |
-| 交互导出 | 无 | 按 e 键 |
-| 测试数 | 68 | 80 |
+v1 直接回答了"Token消耗少、生成内容少、用户无互动"的反馈：
+
+- **生成内容更丰富**：增加更多字段要求，每个字段输出更多细节
+- **交互模式**：进入 `surprise-plan` 无参数即可进入交互 REPL，可持续生成新领域
+- **难度选择**：支持 轻松入门 / 标准 / 深入挑战 三档
+- **演示模式**：`--demo` 模式无需 API Key，内置随机模板生成演示 PLAN
+- **动画系统**：4 种 whip 动画（default / lightning / chain / laser）
+- **68 个 mock 测试**：覆盖领域选取、配置管理、API 调用、CLI 入口
+
+---
+
+### v0 → v1 → v2 完整对比
+
+| 方面 | v0 | v1 | v2 |
+|------|----|----|----|
+| 领域池 | 49 | 159 | 159 |
+| 测试数 | 0 | 68 | 80 |
+| max_tokens | 4096 | 4096 | 8192 |
+| why_interesting | 4-5 句 | 4-5 句 | 6-8 句 |
+| connections | 3-4 条 | 3-4 条 | 4-5 条 |
+| key_terms | 5-6 个 | 5-6 个 | 6-8 个 |
+| fun_fact | 1 句 | 1 句 | 2-3 句 |
+| activities/周 | 3-4 个 | 3-4 个 | 4-5 个 |
+| resources/周 | 2-3 个 | 2-3 个 | 3-4 个 |
+| surprise_factor | 1 句 | 1 句 | 2-3 句 |
+| 随机性 | 无 | 无 | 随机 seed 注入 |
+| 交互模式 | 无 | 有 | 有 + 导出 |
+| 导出功能 | 无 | 无 | .json / .md / .txt / .html |
+| 难度选择 | 无 | 有 | 有 |
+| 演示模式 | 无 | 有 | 有 |
+
+---
 
 ### 下载指定版本
 
@@ -237,8 +252,12 @@ surprise-plan/
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
-# 下载 v1（旧版本，49 领域池）
+# 下载 v1（丰富内容 + 交互模式，159 领域池）
 git clone --branch v1 https://github.com/qzqzqdwww/Hackathon-S2.git
+cd Hackathon-S2/surprise-plan
+
+# 下载 v0（基础版，49 领域池）
+git clone --branch v0 https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
 # 在已克隆的仓库中切换
@@ -247,7 +266,9 @@ git checkout v1            # 切换到 v1
 ```
 
 > 也可在 GitHub Releases 页面下载 ZIP：
-> `https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2`
+> - [v2 (最新)](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2)
+> - [v1](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1)
+> - [v0](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v0)
 
 ---
 

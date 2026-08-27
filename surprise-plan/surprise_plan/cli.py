@@ -11,6 +11,7 @@ Usage:
 """
 
 import os
+import random
 import sys
 import time
 
@@ -345,62 +346,116 @@ def _print_config():
     console.print(f"  模型: {s['model']}\n")
 
 
-# ─── Demo Plan ─────────────────────────────────────────────
+# ─── Demo Plan Generator ─────────────────────────────────────
 
-_DEMO_PLAN = {
-    "domain": "养蜂 (Beekeeping)",
-    "tagline": "The rhythm of a hive is the tempo your music practice has been missing",
-    "why_interesting": (
-        "养蜂是自然界最精密的分布式系统。一个蜂群由上万只蜜蜂组成，"
-        "却没有任何中央控制——它们通过'摇摆舞'传递信息，通过信息素协调行动。"
-        "如果你对AI感兴趣，你会惊叹于这套没有算法的智能；"
-        "如果你对音乐感兴趣，你会发现蜂群振翅的频率本身就是一首交响乐。"
-    ),
+_DEMO_TEMPLATES = {
+    "activities": [
+        "阅读入门指南前3章，整理核心概念笔记",
+        "观看入门纪录片/公开课，记录3个最让你惊讶的事实",
+        "搜索该领域的经典案例，分析其成功或失败的关键因素",
+        "尝试一次基础实践操作（实验/创作/模拟），记录过程与感受",
+        "阅读领域内的经典著作/论文，写出200字读后感",
+        "加入一个线上社区（论坛/Discord/Reddit），观察社区讨论热点",
+        "制作一张该领域的知识地图，标注核心概念关系",
+        "采访一位从业者（或观看访谈视频），总结他们的日常工作",
+        "对比该领域与你熟悉领域的异同，列出5个关键差异",
+        "尝试将该领域的核心方法应用到你的兴趣领域",
+        "参加一个线上讲座或 workshop，做结构化笔记",
+        "用思维导图梳理该领域的历史发展脉络",
+    ],
+    "resources": [
+        "Wikipedia 相关条目（多读几遍，注意引用来源）",
+        "YouTube / Bilibili 系列视频（搜索'领域名 + 入门'）",
+        "Coursera / edX 入门课程（旁听免费版本）",
+        "该领域经典著作（搜索'领域名 + 必读书单'）",
+        "TED 演讲（搜索领域名，筛选高评分）",
+        "Kaggle 入门项目（如适用）",
+        "GitHub 开源项目（搜索领域名 + tutorial）",
+        "arXiv 近3年综述论文（搜索'领域名 + survey'）",
+        "行业博客/Substack（搜索领域名 + newsletter）",
+        "在线交互式教程（如适用，如 Codecademy、Brilliant）",
+    ],
     "connections": [
-        "养蜂的'摇摆舞'通信协议是自然界最原始的舞蹈形式",
-        "微距摄影技巧可以直接迁移到蜂巢内部拍摄",
-        "AI蜂群算法（Swarm Intelligence）正是受此启发",
+        "该领域的核心思想可以用你熟悉的领域来类比理解",
+        "两种领域的底层方法论惊人地相似，只是应用场景不同",
+        "你已有的技能可以直接迁移到这个新领域",
+        "这个领域的历史发展与你的兴趣领域有交汇点",
+        "该领域正在使用的工具/技术，你在其他场景中见过",
+        "两者的理论基础都源于同一学科的早期思想",
     ],
-    "key_terms": [
-        "蜂群意识 (Swarm Intelligence) — 无中央控制的分布式决策系统",
-        "摇摆舞 (Waggle Dance) — 蜜蜂传递食物位置信息的8字形舞蹈",
-        "蜂巢六边形 (Honeycomb Hexagon) — 自然界最高效的存储结构",
-        "信息素 (Pheromone) — 蜜蜂之间的化学通信信号",
-        "蜂王浆 (Royal Jelly) — 决定蜜蜂幼虫发育为蜂王的特殊分泌物",
+    "surprise_factors": [
+        "当你用全新的视角审视熟悉的事物，你会发现——世界远比你想象的有趣。",
+        "学习一门新领域最有趣的部分，不是掌握知识，而是发现旧知识的全新应用场景。",
+        "每一个'冷门'领域，都藏着通往下一个大突破的钥匙。",
+        "跨界的灵感往往来自最意想不到的地方——保持好奇心。",
+        "你以为自己只是在学一个新领域，其实你在构建一个全新的思维模型。",
     ],
-    "fun_fact": "蜜蜂的翅膀每秒扇动 230 次，产生的中频嗡嗡声恰好是 C 大调的音高——音乐人养蜂，等于拥有了一个活的节拍器。",
-    "learning_path": [
-        {
-            "week": 1, "theme": "蜂巢的社会结构与蜜蜂语言",
-            "activities": ["阅读《The Honey Bee》前3章", "观看蜜蜂摇摆舞纪录片", "画出蜂群信息传递流程图"],
-            "resources": ["《The Honey Bee》— James L. Gould", "BBC Earth: The Waggle Dance"],
-        },
-        {
-            "week": 2, "theme": "蜂箱解剖与养蜂工具",
-            "activities": ["研究Langstroth蜂箱的结构设计", "观看开箱检查实操视频", "用纸板制作迷你蜂箱模型"],
-            "resources": ["Beekeeper's Handbook", "YouTube: First Hive Inspection"],
-        },
-        {
-            "week": 3, "theme": "蜂蜜提取与品鉴",
-            "activities": ["学习离心提取器原理", "参观本地养蜂场", "品鉴3种不同花源的蜂蜜"],
-            "resources": ["National Honey Board: Honey Varietals Guide", "《蜂蜜: 自然界的液态黄金》"],
-        },
-        {
-            "week": 4, "theme": "蜂群算法与你的兴趣交汇",
-            "activities": ["研究粒子群优化（PSO）算法", "用Python实现简易蜂群觅食模拟", "写短文：如果你要为蜜蜂创作一首音乐，它会是什么节奏？"],
-            "resources": ["《Swarm Intelligence》— Kennedy & Eberhart", "Processing: Boids sketch"],
-        },
-    ],
-    "surprise_factor": (
-        "当你用摄影师的眼光观察蜂巢，用算法工程师的思维理解蜂群，"
-        "养蜂就不再是农业——它是一种你从未想过的、融合了艺术与科技的活体实验。"
-    ),
 }
 
 
 def _generate_demo_plan() -> dict:
-    """Return a demo plan without calling any API."""
-    return dict(_DEMO_PLAN)
+    """Generate a random demo plan without calling any API."""
+    domain = random.choice(DOMAINS)
+    raw_name = domain.split("(")[0].strip()
+    activities_pool = _DEMO_TEMPLATES["activities"]
+    resources_pool = _DEMO_TEMPLATES["resources"]
+    connections_pool = _DEMO_TEMPLATES["connections"]
+    surprise_pool = _DEMO_TEMPLATES["surprise_factors"]
+
+    random.shuffle(activities_pool)
+    random.shuffle(resources_pool)
+    random.shuffle(connections_pool)
+
+    activities_per_week = 3
+    resources_per_week = 2
+
+    learning_path = []
+    for week_num in range(1, 5):
+        week_activities = activities_pool[week_num * activities_per_week : (week_num + 1) * activities_per_week]
+        week_resources = resources_pool[week_num * resources_per_week : (week_num + 1) * resources_per_week]
+        if week_num == 4:
+            theme = f"整合：{raw_name} 与你的兴趣交汇"
+            week_activities = activities_pool[-activities_per_week:]
+            week_resources = resources_pool[-resources_per_week:]
+        else:
+            themes = [f"{raw_name} 基础入门", f"{raw_name} 核心概念", f"{raw_name} 进阶实践"]
+            theme = themes[week_num - 1]
+        learning_path.append({
+            "week": week_num,
+            "theme": theme,
+            "activities": week_activities,
+            "resources": week_resources,
+        })
+
+    key_terms_pool = [
+        f"{raw_name}的核心定义与边界",
+        "该领域的基础术语体系",
+        "该领域的历史起源与关键转折点",
+        "当前主流方法论与前沿方向",
+        "该领域与其他学科的交叉点",
+        "实践中的常见误区与最佳实践",
+    ]
+    random.shuffle(key_terms_pool)
+
+    return {
+        "domain": domain,
+        "tagline": f"一次意外的相遇：{raw_name}，也许就是你一直在寻找的新方向",
+        "why_interesting": (
+            f"{raw_name}是一个充满惊喜的领域。"
+            f"它融合了理论与实践，既有深厚的理论基础，又有广泛的应用场景。"
+            f"无论你是追求知识深度，还是寻找新的灵感来源，"
+            f"{raw_name}都能给你带来意想不到的收获。"
+            f"让我们一起踏上这段探索之旅。"
+        ),
+        "connections": connections_pool[:3],
+        "key_terms": key_terms_pool[:5],
+        "fun_fact": (
+            f"Did you know? {raw_name} 领域每年都有大量新发现，"
+            f"而你此刻正在探索的，正是人类知识的前沿。"
+        ),
+        "learning_path": learning_path,
+        "surprise_factor": random.choice(surprise_pool),
+    }
 
 
 # ─── Interactive REPL ──────────────────────────────────────

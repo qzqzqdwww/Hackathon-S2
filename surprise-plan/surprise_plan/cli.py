@@ -76,8 +76,11 @@ def default(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2"):
-    """Animation -> domain pick -> API call -> display plan."""
+def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2", output: str = None):
+    """Animation -> domain pick -> API call -> display plan -> optional export.
+
+    Returns (pick, plan) dicts so the interactive loop can reuse them.
+    """
     if not interests:
         console.print("[red]错误：请至少提供一个兴趣领域。[/red]")
         console.print("[green]示例: surprise-plan \"AI, 音乐, 摄影\"[/green]")
@@ -93,8 +96,8 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
 
     if not regenerate:
         clear_screen()
-        console.print("[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
-        console.print("[dim]打破算法茧房 · 制造意外[/dim]")
+        console.print(f"\n[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
+        console.print(f"[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
         console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
         console.print(f"[yellow]难度: {'轻松入门' if difficulty == '1' else '深入挑战' if difficulty == '3' else '标准'}[/yellow]")
@@ -140,6 +143,16 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         "plan": plan,
     })
 
+    if output:
+        _export_plan(output, {
+            "status": "success",
+            "picked_domain": pick["domain"],
+            "surprise_score": pick.get("surprise_score", 0),
+            "plan": plan,
+        })
+
+    return pick, plan
+
 
 # ─── Direct command (surprise-plan "AI, 音乐, 摄影") ────
 
@@ -153,6 +166,7 @@ def main(
     animation: str = typer.Option("default", "--animation", "-a", help="动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
     difficulty: str = typer.Option("2", "--difficulty", "-d", help="难度: 1=轻松, 2=标准, 3=深入"),
+    output: str = typer.Option(None, "--output", "-o", help="导出文件路径（.json / .md / .txt / .html）"),
 ):
     """[TARGET] Surprise-Plan — 打破算法茧房，随机生成学习计划"""
     if interests is None:
@@ -174,7 +188,7 @@ def main(
         console.print(f"[red]难度必须是 1、2 或 3[/red]")
         raise typer.Exit(1)
 
-    _run(interest_list, animation, speed, demo_mode=demo, difficulty=difficulty)
+    _run(interest_list, animation, speed, demo_mode=demo, difficulty=difficulty, output=output)
 
 
 # ─── Helpers ───────────────────────────────────────────────
@@ -337,6 +351,16 @@ def _parse_provider_choice(choice: str, names: list) -> str:
     return "anthropic"
 
 
+def _export_plan(filepath: str, plan_data: dict):
+    """Export plan to file with format auto-detected from extension."""
+    from .backend.plan_exporter import export_plan
+    try:
+        out_path = export_plan(plan_data, filepath)
+        console.print(f"\n[green]计划已导出至: {out_path}[/green]")
+    except Exception as e:
+        console.print(f"\n[red]导出失败: {e}[/red]")
+
+
 def _print_config():
     from .backend.provider import get_config_summary
     s = get_config_summary()
@@ -493,13 +517,14 @@ def _interactive(default_anim: str = "default", demo: bool = False):
     if anim_choice in {"default", "lightning", "chain", "laser"}:
         animation = anim_choice
 
-    _run(interests, animation, 1.0, demo_mode=demo, difficulty=difficulty)
+    # First plan generation
+    last_pick, last_plan = _run(interests, animation, 1.0, demo_mode=demo, difficulty=difficulty)
 
     while True:
         console.print()
         action = Prompt.ask(
-            f"[dim]Enter 换领域 · [yellow]d[/yellow][dim] 深入本周 · [cyan]n[/cyan][dim] 换动画 · "
-            f"[green]c[/green][dim] 改兴趣 · [red]q[/red][dim] 退出[/dim]",
+            f"[dim]Enter 换领域 · [yellow]d[/yellow][dim] 深入 · [cyan]n[/cyan][dim] 动画 · "
+            f"[green]e[/green][dim] 导出 · [magenta]c[/magenta][dim] 改兴趣 · [red]q[/red][dim] 退出[/dim]",
             default="",
         ).strip().lower()
 
@@ -520,10 +545,30 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         elif action == "d":
             _dive_deeper(interests, animation, demo_mode=demo)
             continue
+        elif action == "e":
+            filepath = Prompt.ask(
+                f"\n[green]导出文件路径[/green]",
+                default="plan.md",
+            )
+            if filepath:
+                from .backend.plan_exporter import detect_format, export_plan
+                plan_data = {
+                    "status": "success",
+                    "picked_domain": last_pick["domain"],
+                    "surprise_score": last_pick.get("surprise_score", 0),
+                    "plan": last_plan,
+                }
+                try:
+                    out = export_plan(plan_data, filepath)
+                    fmt = detect_format(filepath)
+                    console.print(f"\n[green]已导出 ({fmt}) -> {out}[/green]")
+                except Exception as ex:
+                    console.print(f"\n[red]导出失败: {ex}[/red]")
+            continue
         elif action == "":
             pass  # Enter = regenerate with new domain
 
-        _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
+        last_pick, last_plan = _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
 
 
 def _dive_deeper(interests: list, animation: str, demo_mode: bool = False):

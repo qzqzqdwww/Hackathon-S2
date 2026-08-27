@@ -131,6 +131,107 @@ class TestInteractiveMode:
         r = runner.invoke(app, ["main", "--animation", "xyz", "AI"])
         assert r.exit_code != 0
 
+    @patch("surprise_plan.cli.display_plan")
+    @patch("surprise_plan.cli.play_animation")
+    @patch("surprise_plan.cli.clear_screen")
+    @patch("surprise_plan.cli.pick_domain", return_value=_pick())
+    @patch("surprise_plan.cli.generate_plan", return_value=_plan())
+    @patch("surprise_plan.backend.plan_exporter.export_plan")
+    def test_export_in_interactive(self, mock_export, gen, pick, clear, anim, display):
+        mock_export.return_value = "/tmp/plan.md"
+        r = runner.invoke(
+            app, [], input="2\nAI\n\n" + "e\n/tmp/plan.md\nq\n"
+        )
+        assert r.exit_code == 0
+        mock_export.assert_called_once()
+        args = mock_export.call_args[0]
+        assert args[0]["picked_domain"] == "真菌学 (Mycology)"
+        assert args[1].endswith("plan.md")
+
+    @patch("surprise_plan.cli.generate_plan", return_value=_plan())
+    @patch("surprise_plan.cli.pick_domain", return_value=_pick())
+    @patch("surprise_plan.backend.plan_exporter.export_plan")
+    def test_output_flag(self, mock_export, mock_pick, mock_gen):
+        r = runner.invoke(app, ["main", "--output", "/tmp/plan.json", "AI"])
+        assert r.exit_code == 0
+        mock_export.assert_called_once()
+        assert mock_export.call_args[0][1].endswith("plan.json")
+
+    def test_export_json_extension(self):
+        from surprise_plan.backend.plan_exporter import detect_format
+        assert detect_format("plan.json") == "json"
+
+    def test_export_md_extension(self):
+        from surprise_plan.backend.plan_exporter import detect_format
+        assert detect_format("plan.md") == "md"
+
+    def test_export_txt_extension(self):
+        from surprise_plan.backend.plan_exporter import detect_format
+        assert detect_format("plan.txt") == "txt"
+
+    def test_export_html_extension(self):
+        from surprise_plan.backend.plan_exporter import detect_format
+        assert detect_format("plan.html") == "html"
+
+    def test_export_unknown_falls_back_to_txt(self):
+        from surprise_plan.backend.plan_exporter import detect_format
+        assert detect_format("plan.doc") == "txt"
+
+    def test_export_creates_file(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {
+            "status": "success",
+            "plan": {
+                "domain": "测试领域",
+                "why_interesting": "原因",
+                "connections": [],
+                "key_terms": [],
+                "learning_path": [],
+            },
+        }
+        out = tmp_path / "out.md"
+        result = export_plan(data, str(out))
+        assert out.exists()
+        assert "测试领域" in out.read_text(encoding="utf-8")
+
+    def test_export_json_format(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {"domain": "JSON测试", "plan": {"domain": "JSON测试", "why_interesting": "x"}}
+        out = tmp_path / "out.json"
+        result = export_plan(data, str(out))
+        content = out.read_text(encoding="utf-8")
+        assert '"domain"' in content
+        assert "JSON测试" in content
+
+    def test_export_html_format(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {
+            "plan": {
+                "domain": "HTML测试",
+                "why_interesting": "why",
+                "key_terms": ["term1"],
+                "fun_fact": "fact",
+                "connections": ["conn"],
+                "learning_path": [
+                    {"week": 1, "theme": "t1", "activities": ["a1"], "resources": ["r1"]},
+                ],
+                "surprise_factor": "surprise",
+            },
+        }
+        out = tmp_path / "out.html"
+        export_plan(data, str(out))
+        content = out.read_text(encoding="utf-8")
+        assert "<!DOCTYPE html>" in content
+        assert "HTML测试" in content
+        assert "term1" in content
+
+    def test_export_creates_parent_dirs(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {"plan": {"domain": "deep"}}
+        out = tmp_path / "a" / "b" / "plan.txt"
+        result = export_plan(data, str(out))
+        assert out.exists()
+
 
 class TestConfigCommands:
     def test_show(self):

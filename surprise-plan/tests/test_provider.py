@@ -66,7 +66,7 @@ class TestGeneratePlanOpenAICompatible:
             generate_plan(interests, domain)
 
         seed = 42
-        angle = "even seed: start from a surprising modern application"
+        angle = "偶数种子：从令人惊讶的现代应用切入"
         expected_msg = (
             f"[random_seed={seed}]\n"
             f"My current interests are: {', '.join(interests)}.\n"
@@ -137,3 +137,11 @@ class TestStripMarkdownFences:
 
     def test_partial_fence(self):
         assert _strip_markdown_fences('```\n{"a": 1}') == '{"a": 1}'
+
+    def test_strips_fence_with_preamble(self):
+        raw = "Here is the JSON:\n```json\n{\"a\": 1}\n```"
+        assert _strip_markdown_fences(raw) == '{"a": 1}'
+
+    def test_strips_fence_with_preamble_no_lang(self):
+        raw = "Sure! Here you go:\n```\n{\"a\": 1}\n```"
+        assert _strip_markdown_fences(raw) == '{"a": 1}'

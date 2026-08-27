@@ -297,7 +297,7 @@ def config_show():
 def config_clear():
     """清除保存的 API 配置"""
     if not typer.confirm("确定要清除所有保存的 API 配置吗？"):
-        console.print(f"\n[dim]已取消。[dim]")
+        console.print(f"\n[dim]已取消。[/dim]")
         raise typer.Exit(0)
     clear_config()
     console.print(f"\n[green]配置已清除。[/green]")
@@ -421,10 +421,10 @@ def _generate_demo_plan() -> dict:
     """Generate a random demo plan without calling any API."""
     domain = random.choice(DOMAINS)
     raw_name = domain.split("(")[0].strip()
-    activities_pool = _DEMO_TEMPLATES["activities"]
-    resources_pool = _DEMO_TEMPLATES["resources"]
-    connections_pool = _DEMO_TEMPLATES["connections"]
-    surprise_pool = _DEMO_TEMPLATES["surprise_factors"]
+    activities_pool = list(_DEMO_TEMPLATES["activities"])
+    resources_pool = list(_DEMO_TEMPLATES["resources"])
+    connections_pool = list(_DEMO_TEMPLATES["connections"])
+    surprise_pool = list(_DEMO_TEMPLATES["surprise_factors"])
 
     random.shuffle(activities_pool)
     random.shuffle(resources_pool)
@@ -543,7 +543,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
             if anim_choice in {"default", "lightning", "chain", "laser"}:
                 animation = anim_choice
         elif action == "d":
-            _dive_deeper(interests, animation, demo_mode=demo)
+            _dive_deeper(interests, difficulty=difficulty, demo_mode=demo)
             continue
         elif action == "e":
             filepath = Prompt.ask(
@@ -571,7 +571,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         last_pick, last_plan = _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
 
 
-def _dive_deeper(interests: list, animation: str, demo_mode: bool = False):
+def _dive_deeper(interests: list, difficulty: str = "2", demo_mode: bool = False):
     """Generate an extended deep-dive plan for a specific week/topic."""
     console.print(f"\n[bold yellow][DIVE] 深入探索[/bold yellow]")
     console.print(f"[dim]输入你想深入了解的主题（例如：'真菌的菌丝网络'）[/dim]")
@@ -588,7 +588,7 @@ def _dive_deeper(interests: list, animation: str, demo_mode: bool = False):
         if demo_mode:
             plan = _generate_demo_plan()
         else:
-            plan = generate_plan(interests, topic)
+            plan = generate_plan(interests, topic, difficulty=difficulty)
     except Exception as e:
         console.print(f"[red]生成失败: {e}[/red]")
         return

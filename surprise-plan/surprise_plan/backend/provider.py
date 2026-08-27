@@ -11,6 +11,7 @@ Priority: env vars > config file > built-in defaults
 
 import json
 import random
+import re
 
 from .config import get_effective_config, get_provider_config, mask_key
 
@@ -117,12 +118,12 @@ def _call_openai_compatible(api_key: str, model: str, base_url: str, user_messag
     return response.choices[0].message.content.strip()
 
 
+_FENCE_RE = re.compile(r'(?s)^.*?```(?:json)?\s*\n?|\n?\s*```.*')
+
+
 def _strip_markdown_fences(content: str) -> str:
-    if content.startswith("```"):
-        content = content.split("\n", 1)[-1]
-    if content.endswith("```"):
-        content = content[:-3]
-    return content.strip()
+    """Strip markdown code fences and any surrounding preamble/epilogue from LLM response."""
+    return _FENCE_RE.sub('', content).strip()
 
 
 def get_current_provider() -> str:
@@ -181,7 +182,7 @@ def generate_plan(interests: list, picked_domain: str, difficulty: str = "2") ->
     diff_note = difficulty_map.get(str(difficulty), difficulty_map["2"])
 
     seed = random.randint(1, 999999)
-    angle_hint = "odd seed: start from a surprising historical anecdote" if seed % 2 == 1 else "even seed: start from a surprising modern application"
+    angle_hint = "奇数种子：从令人惊讶的历史轶事切入" if seed % 2 == 1 else "偶数种子：从令人惊讶的现代应用切入"
 
     user_message = (
         f"[random_seed={seed}]\n"

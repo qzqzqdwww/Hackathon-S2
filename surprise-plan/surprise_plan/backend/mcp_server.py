@@ -140,7 +140,8 @@ METHOD_HANDLERS = {
 async def run_server() -> None:
     while True:
         try:
-            line = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
+            loop = asyncio.get_running_loop()
+            line = await loop.run_in_executor(None, sys.stdin.readline)
         except (EOFError, KeyboardInterrupt):
             break
         if not line:

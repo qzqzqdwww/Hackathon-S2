@@ -232,6 +232,62 @@ class TestInteractiveMode:
         result = export_plan(data, str(out))
         assert out.exists()
 
+    def test_export_html_escapes_special_chars(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {
+            "plan": {
+                "domain": "<script>alert(1)</script>",
+                "tagline": "<em>tag</em>",
+                "why_interesting": "normal <b>bold</b>",
+                "key_terms": ["<term>"],
+                "fun_fact": "<img src=x onerror=alert(1)>",
+                "connections": ["<a href='#'>link</a>"],
+                "learning_path": [
+                    {"week": 1, "theme": "<h1>t</h1>",
+                     "activities": ["<script>"], "resources": ["<r>"]},
+                ],
+                "surprise_factor": "<div>sf</div>",
+            },
+        }
+        out = tmp_path / "xss.html"
+        export_plan(data, str(out))
+        content = out.read_text(encoding="utf-8")
+        assert "<script>" not in content
+        assert "&lt;script&gt;" in content
+        assert "&lt;h1&gt;" in content
+        assert "&lt;em&gt;" in content
+
+    def test_export_markdown_escapes_special_chars(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {
+            "plan": {
+                "domain": "<script>x</script>",
+                "why_interesting": "<b>bold</b>",
+                "key_terms": ["<term>"],
+                "connections": ["<a>link</a>"],
+                "learning_path": [
+                    {"week": 1, "theme": "t",
+                     "activities": ["<script>"], "resources": ["<r>"]},
+                ],
+                "surprise_factor": "<div>x</div>",
+            },
+        }
+        out = tmp_path / "xss.md"
+        export_plan(data, str(out))
+        content = out.read_text(encoding="utf-8")
+        assert "<script>" not in content
+        assert "&lt;script&gt;" in content
+
+    @patch("surprise_plan.cli.display_plan")
+    @patch("surprise_plan.cli.generate_plan", return_value=_plan())
+    def test_dive_deeper_passes_difficulty(self, mock_gen, mock_display):
+        from surprise_plan.cli import _dive_deeper
+        with patch("rich.prompt.Prompt.ask", return_value="test topic"):
+            _dive_deeper(["AI"], difficulty="3", demo_mode=False)
+        mock_gen.assert_called_once()
+        assert mock_gen.call_args[0][1] == "test topic"
+        assert mock_gen.call_args[1]["difficulty"] == "3"
+
 
 class TestConfigCommands:
     def test_show(self):

@@ -1,4 +1,5 @@
 """Plan export — multiple formats, filename auto-detection."""
+import html
 import json
 import os
 from pathlib import Path
@@ -106,59 +107,61 @@ def _format_plain(domain, tagline, why, key_terms, fun_fact,
 
 def _format_markdown(domain, tagline, why, key_terms, fun_fact,
                      connections, learning_path, surprise) -> str:
-    lines = [f"# {domain}", ""]
+    esc = html.escape
+    lines = [f"# {esc(domain)}", ""]
     if tagline:
-        lines += [f"*{tagline}*", ""]
-    lines += ["## 为什么学这个", "", why, ""]
+        lines += [f"*{esc(tagline)}*", ""]
+    lines += ["## 为什么学这个", "", esc(why), ""]
     if key_terms:
         lines += ["## 关键概念", ""]
         for t in key_terms:
-            lines.append(f"- {t}")
+            lines.append(f"- {esc(t)}")
         lines.append("")
     if fun_fact:
-        lines += ["## 冷知识", "", f"> {fun_fact}", ""]
+        lines += ["## 冷知识", "", f"> {esc(fun_fact)}", ""]
     if connections:
         lines += ["## 与你兴趣的意外关联", ""]
         for c in connections:
-            lines.append(f"- {c}")
+            lines.append(f"- {esc(c)}")
         lines.append("")
     if learning_path:
         lines += ["## 四周学习路径", ""]
         for w in learning_path:
-            lines.append(f"### 第 {w.get('week', '?')} 周：{w.get('theme', '')}")
+            lines.append(f"### 第 {w.get('week', '?')} 周：{esc(w.get('theme', ''))}")
             lines.append("")
             for a in w.get("activities", []):
-                lines.append(f"- {a}")
+                lines.append(f"- {esc(a)}")
             lines.append("")
             for r in w.get("resources", []):
-                lines.append(f"  *资源*: {r}")
+                lines.append(f"  *资源*: {esc(r)}")
             lines.append("")
     if surprise:
-        lines += ["## 意外之喜", "", f"*{surprise}*", ""]
+        lines += ["## 意外之喜", "", f"*{esc(surprise)}*", ""]
     return "\n".join(lines)
 
 
 def _format_html(domain, tagline, why, key_terms, fun_fact,
                  connections, learning_path, surprise) -> str:
-    def p(text): return f"<p>{text}</p>"
-    def h2(text): return f"<h2>{text}</h2>"
-    def h3(text): return f"<h3>{text}</h3>"
+    esc = html.escape
+    def p(text): return f"<p>{esc(text)}</p>"
+    def h2(text): return f"<h2>{esc(text)}</h2>"
+    def h3(text): return f"<h3>{esc(text)}</h3>"
 
-    body = f"<h1>{domain}</h1>"
+    body = f"<h1>{esc(domain)}</h1>"
     if tagline:
-        body += f'<p class="tagline"><em>{tagline}</em></p>'
+        body += f'<p class="tagline"><em>{esc(tagline)}</em></p>'
     body += h2("为什么学这个") + p(why.replace("\n", "<br>"))
     if key_terms:
         body += h2("关键概念") + "<ul>"
         for t in key_terms:
-            body += f"<li>{t}</li>"
+            body += f"<li>{esc(t)}</li>"
         body += "</ul>"
     if fun_fact:
-        body += h2("冷知识") + f'<blockquote>{fun_fact}</blockquote>'
+        body += h2("冷知识") + f'<blockquote>{esc(fun_fact)}</blockquote>'
     if connections:
         body += h2("与你兴趣的意外关联") + "<ul>"
         for c in connections:
-            body += f"<li>{c}</li>"
+            body += f"<li>{esc(c)}</li>"
         body += "</ul>"
     if learning_path:
         body += h2("四周学习路径")
@@ -166,19 +169,19 @@ def _format_html(domain, tagline, why, key_terms, fun_fact,
             body += h3(f"第 {w.get('week', '?')} 周：{w.get('theme', '')}")
             body += "<ul>"
             for a in w.get("activities", []):
-                body += f"<li>{a}</li>"
+                body += f"<li>{esc(a)}</li>"
             body += "</ul>"
             for r in w.get("resources", []):
-                body += f'<p class="resource">资源: {r}</p>'
+                body += f'<p class="resource">资源: {esc(r)}</p>'
     if surprise:
-        body += h2("意外之喜") + f'<p class="surprise"><em>{surprise}</em></p>'
+        body += h2("意外之喜") + f'<p class="surprise"><em>{esc(surprise)}</em></p>'
 
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{domain} - Surprise-Plan</title>
+<title>{esc(domain)} - Surprise-Plan</title>
 <style>
 body {{ max-width: 720px; margin: 0 auto; padding: 2rem;
        font-family: system-ui, -apple-system, sans-serif; line-height: 1.8; color: #222; }}

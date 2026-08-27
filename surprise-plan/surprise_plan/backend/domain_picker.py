@@ -253,7 +253,7 @@ def _distance_score(keyword: str, excluded: set) -> int:
                   "research", "lab", "科学", "生物", "物理", "化学", "天文",
                   "分子", "量子", "神经", "免疫", "气象", "海洋", "地质"}
     craft_kw = {"craft", "making", "build", "wood", "pottery", "weave",
-                "手工", "制作", "编织", "陶艺", "编织", "木工", "锻造"}
+                "手工", "制作", "编织", "陶艺", "木工", "锻造"}
     social_kw = {"social", "psychology", "economics", "politics", "law",
                  "社会", "心理", "经济", "政治", "法律", "传播", "性别",
                  "管理", "金融", "市场", "会计"}

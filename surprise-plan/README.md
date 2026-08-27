@@ -77,9 +77,11 @@ surprise-plan --list-animations
 
 ### 交互模式快捷键
 
-- `Enter` — 重新生成
+- `Enter` — 重新生成（换一个陌生领域）
+- `d` — 深入探索（对当前 PLAN 的某个主题展开）
+- `e` — 导出 PLAN 到文件（.json / .md / .txt / .html）
 - `n` — 切换动画样式
-- `s` — 设置 API
+- `c` — 修改兴趣领域
 - `q` — 退出
 
 ---
@@ -90,7 +92,7 @@ surprise-plan --list-animations
 python -m pytest tests/ -v
 ```
 
-68 个 mock 测试，覆盖领域选取、配置管理、API 调用、CLI 入口，无需真实 API Key。
+80 个 mock 测试，覆盖领域选取、配置管理、API 调用、CLI 入口、导出功能，无需真实 API Key。
 
 ---
 
@@ -107,9 +109,10 @@ surprise-plan/
 │       ├── __init__.py
 │       ├── config.py         # 持久化配置 (~/.surprise-plan/config.json)
 │       ├── domain_picker.py  # 159 领域池 + 加权随机选取
+│       ├── plan_exporter.py  # 多格式导出 (.json / .md / .txt / .html)
 │       ├── provider.py       # 多 provider LLM 客户端
 │       └── mcp_server.py     # MCP stdio 服务器
-├── tests/                    # 68 个 pytest mock 测试
+├── tests/                    # 80 个 pytest mock 测试
 ├── pyproject.toml
 └── README.md
 ```
@@ -118,10 +121,11 @@ surprise-plan/
 
 | 模块 | 职责 |
 |------|------|
-| `cli.py` | Typer CLI：交互模式、直接模式、config 子命令 |
-| `display.py` | Rich 面板渲染 + 4 种 ASCII  whip 动画（default/lightning/chain/laser） |
+| `cli.py` | Typer CLI：交互模式、直接模式、config 子命令、导出功能 |
+| `display.py` | Rich 面板渲染 + 4 种 ASCII whip 动画（default/lightning/chain/laser） |
 | `backend/domain_picker.py` | 159 个细分领域池，按学术分类组织；加权随机 + 语义距离评分 |
-| `backend/provider.py` | 多 provider 抽象：Anthropic + 所有 OpenAI 兼容 API |
+| `backend/plan_exporter.py` | PLAN 导出：自动检测格式，支持 json/md/txt/html |
+| `backend/provider.py` | 多 provider 抽象：Anthropic + 所有 OpenAI 兼容 API，8k max_tokens |
 | `backend/config.py` | 8 个内置 provider 默认值 + JSON 持久化 + env 优先级 |
 
 ---
@@ -162,15 +166,74 @@ surprise-plan/
 
 ## 历史版本
 
-| 版本 | 领域数 | 测试 | 下载方式 |
-|------|--------|------|---------|
-| **main** (最新) | 159 | 68 个 mock 测试 | `git clone` 默认获取 |
-| **v1** | 49 | 无 | `git clone --branch v1 <url>` |
+| 版本 | 领域数 | 测试数 | 核心特性 | 下载方式 |
+|------|--------|--------|----------|---------|
+| **v2** (最新) | 159 | 80 | 8k token 深度生成 + 随机 seed + 多格式导出 + 交互导出 | `git clone` 默认获取 |
+| **main** | 159 | 80 | 同 v2（main 分支即 v2） | `git clone` 默认获取 |
+| **v1** | 49 | 0 | 基础版本，单次生成，固定内容 | `git clone --branch v1 <url>` |
+
+### v2 更新内容
+
+#### 生成质量大幅提升
+
+- **`max_tokens` 翻倍**：4096 → 8192，给模型更大输出空间
+- **System Prompt 全面强化**，每个字段要求更具体、更深入：
+  - `why_interesting`：4-5 句 → 6-8 句，要求开头有 vivid hook
+  - `connections`：3-4 条 → 4-5 条，每条必须点明用户兴趣领域里的**具体概念**并解释精确映射关系
+  - `key_terms`：5-6 个 → 6-8 个，每个带反直觉细节
+  - `fun_fact`：1 句 → 2-3 句，必须是大多数人不知道的事实
+  - `activities`：3-4 个/周 → 4-5 个/周，拒绝泛泛建议（如"读本书"），要求具体步骤 + 对照用户兴趣写对比笔记
+  - `resources`：2-3 个/周 → 3-4 个/周，要求有具体书名/章节/视频标题
+  - `surprise_factor`：1 句 → 2-3 句，回扣用户兴趣并留下新视角
+  - Week 4 必须包含 **signature project**，综合四周内容并明确回连用户原始兴趣
+- **随机 Seed 注入**：每次生成时注入 `1~999999` 随机数到 prompt，奇数 seed 从历史轶事切入，偶数从现代应用切入，确保每次生成角度不同、内容随机
+
+#### 新增 PLAN 导出功能
+
+- 支持 **4 种导出格式**：`.json`、`.md`（Markdown）、`.txt`（纯文本）、`.html`（带样式）
+- 格式**自动检测**（根据文件扩展名）
+- 自动创建目标文件的父目录
+- 两种使用方式：
+  - 命令行：`surprise-plan main --output plan.md "AI, 音乐"`
+  - 交互模式：生成后按 `e` 键，输入文件路径即可导出
+
+#### 交互模式增强
+
+- 新增 `e`（导出）快捷键
+- 难度选择：支持 轻松入门 / 标准 / 深入挑战 三档
+- 交互循环可重复生成（Enter）、深入探索（d）、切换动画（n）、改兴趣（c）、导出（e）、退出（q）
+- `_run()` 返回 `(pick, plan)` 元组，交互循环复用上次结果用于导出
+
+#### 测试覆盖
+
+- 从 68 个增至 **80 个** pytest mock 测试
+- 新增导出功能测试（格式检测、文件创建、内容正确性、父目录创建）
+- 新增随机 seed 测试（验证不同调用产生不同 prompt）
+
+---
+
+### v1 → v2 迁移摘要
+
+| 方面 | v1 | v2 |
+|------|----|----|
+| 领域池 | 49 | 159 |
+| max_tokens | 4096 | 8192 |
+| why_interesting | 4-5 句 | 6-8 句 |
+| connections | 3-4 条 | 4-5 条 |
+| key_terms | 5-6 个 | 6-8 个 |
+| fun_fact | 1 句 | 2-3 句 |
+| activities/周 | 3-4 个 | 4-5 个 |
+| resources/周 | 2-3 个 | 3-4 个 |
+| surprise_factor | 1 句 | 2-3 句 |
+| 随机性 | 无 | 随机 seed 注入 |
+| 导出功能 | 无 | .json / .md / .txt / .html |
+| 交互导出 | 无 | 按 e 键 |
+| 测试数 | 68 | 80 |
 
 ### 下载指定版本
 
 ```bash
-# 下载最新版本（main 分支）
+# 下载最新版本（v2，即 main 分支）
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
@@ -184,7 +247,7 @@ git checkout v1            # 切换到 v1
 ```
 
 > 也可在 GitHub Releases 页面下载 ZIP：
-> `https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1`
+> `https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2`
 
 ---
 

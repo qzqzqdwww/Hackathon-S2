@@ -76,7 +76,7 @@ def default(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2", output: str = None):
+def _run(interests: list[str], animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2", output: str = None):
     """Animation -> domain pick -> API call -> display plan -> optional export.
 
     Returns (pick, plan) dicts so the interactive loop can reuse them.
@@ -348,7 +348,7 @@ def _parse_provider_choice(choice: str, names: list) -> str:
         return c
     if c in ("custom", str(len(KNOWN_PROVIDERS) + 1)):
         return "custom"
-    return "anthropic"
+    raise typer.BadParameter(f"未知引擎: {choice}，请输入序号或名称")
 
 
 def _export_plan(filepath: str, plan_data: dict):
@@ -571,7 +571,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         last_pick, last_plan = _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
 
 
-def _dive_deeper(interests: list, difficulty: str = "2", demo_mode: bool = False):
+def _dive_deeper(interests: list[str], difficulty: str = "2", demo_mode: bool = False):
     """Generate an extended deep-dive plan for a specific week/topic."""
     console.print(f"\n[bold yellow][DIVE] 深入探索[/bold yellow]")
     console.print(f"[dim]输入你想深入了解的主题（例如：'真菌的菌丝网络'）[/dim]")

@@ -69,8 +69,10 @@ def load_config() -> dict:
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError:
         return {}
+    except PermissionError:
+        raise
 
 
 def save_config(config: dict) -> None:

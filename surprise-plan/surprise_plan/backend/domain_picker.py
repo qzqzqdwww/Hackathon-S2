@@ -203,7 +203,7 @@ DOMAINS = [
 ]
 
 
-def pick_domain(excluded: list) -> dict:
+def pick_domain(excluded: list[str]) -> dict:
     """Pick a random domain NOT semantically close to excluded interests.
 
     Excludes domains that match any excluded keyword (Chinese or English),

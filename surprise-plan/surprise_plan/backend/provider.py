@@ -143,7 +143,7 @@ def get_config_summary() -> dict:
     }
 
 
-def generate_plan(interests: list, picked_domain: str, difficulty: str = "2") -> dict:
+def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2") -> dict:
     """Generate a surprise learning plan via LLM API.
 
     Supports: Claude, OpenAI, DeepSeek, Zhipu GLM, StepFun, Doubao,
@@ -192,9 +192,17 @@ def generate_plan(interests: list, picked_domain: str, difficulty: str = "2") ->
         f"Angle hint ({angle_hint})"
     )
 
-    if provider == "anthropic":
-        content = _call_anthropic(api_key, model, user_message)
-    else:
-        content = _call_openai_compatible(api_key, model, base_url, user_message)
+    try:
+        if provider == "anthropic":
+            content = _call_anthropic(api_key, model, user_message)
+        else:
+            content = _call_openai_compatible(api_key, model, base_url, user_message)
+    except json.JSONDecodeError:
+        raise ValueError("AI 返回的内容不是有效的 JSON，请重试。")
+    except Exception:
+        raise
 
-    return json.loads(_strip_markdown_fences(content))
+    try:
+        return json.loads(_strip_markdown_fences(content))
+    except json.JSONDecodeError:
+        raise ValueError("AI 返回的内容无法解析，请重试或更换模型。")

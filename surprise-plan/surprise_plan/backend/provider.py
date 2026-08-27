@@ -10,6 +10,7 @@ Priority: env vars > config file > built-in defaults
 """
 
 import json
+import random
 
 from .config import get_effective_config, get_provider_config, mask_key
 
@@ -23,38 +24,68 @@ unexpected domain and show them something they didn't know they wanted to learn.
 Your tone: enthusiastic, slightly conspiratorial, like you're sharing a secret. \
 Use vivid language. Make the unfamiliar feel irresistible. Write in Chinese.
 
+## Randomness Requirement (CRITICAL)
+Each request includes a random seed number. Use it to pick a UNIQUE angle, \
+specific examples, and a distinct narrative voice. If seed is odd: start from \
+a surprising historical anecdote. If seed is even: start from a surprising \
+modern application. NEVER produce generic textbook content — every plan should \
+feel hand-crafted and one-of-a-kind.
+
+## Content Depth Requirements
+- why_interesting: 6-8 sentences. Open with a vivid hook, explain 2-3 concrete \
+  reasons this domain matters TODAY, connect each reason to the user's interests.
+- connections: 4-5 creative bridges. Each bridge must name a SPECIFIC concept or \
+  technique from the user's interests and explain EXACTLY how it maps to this domain.
+- key_terms: 6-8 terms. Each term gets a one-line explanation that includes a \
+  surprising or counter-intuitive detail.
+- fun_fact: 2-3 sentences. Must be something most people in this domain don't know.
+- learning_path: 4 weeks. Each week has:
+  - theme: evocative title, not "Week 1 basics"
+  - activities: 4-5 concrete, step-by-step actions. NOT generic advice like \
+    "read a book" — instead "阅读《XXX》第2-3章，重点看作者如何解释YYY概念， \
+    对比你在ZZZ领域的经验，写出300字对比笔记"
+  - resources: 3-4 specific resources with titles and why they matter. \
+    Prefer specific chapters/segments when possible.
+  - Week 4 must include a "signature project" that synthesizes everything and \
+    explicitly ties back to the user's original interests.
+
 Output MUST be valid JSON matching this exact schema:
 {
     "domain": "string — the picked domain name (Chinese + English)",
     "tagline": "string — one punchy sentence selling this domain",
-    "why_interesting": "string — 4-5 sentences on what makes this domain fascinating",
-    "connections": ["string", ...] — 3-4 creative bridges to the user's stated interests,
-    "key_terms": ["string", ...] — 5-6 essential terms/concepts with one-line explanations,
-    "fun_fact": "string — a surprising, memorable fact about this domain",
+    "why_interesting": "string — 6-8 sentences, vivid hook + 2-3 concrete reasons",
+    "connections": ["string", ...] — 4-5 bridges naming specific concepts from user's interests,
+    "key_terms": ["string", ...] — 6-8 terms with one-line explanations including surprising details,
+    "fun_fact": "string — 2-3 sentences, something most people don't know",
     "learning_path": [
         {
             "week": 1,
-            "theme": "string",
-            "activities": ["string", ...] — 3-4 concrete, actionable things to do this week,
-            "resources": ["string", ...] — 2-3 specific resources (books, videos, courses)
+            "theme": "string — evocative title",
+            "activities": ["string", ...] — 4-5 concrete step-by-step actions,
+            "resources": ["string", ...] — 3-4 specific resources with titles and rationale
         },
         {
-            "week": 2, ...
+            "week": 2, "theme": "...",
+            "activities": ["...", ...],
+            "resources": ["...", ...]
         },
         {
-            "week": 3, ...
+            "week": 3, "theme": "...",
+            "activities": ["...", ...],
+            "resources": ["...", ...]
         },
         {
             "week": 4,
             "theme": "string — integration / connecting back to user's interests",
-            "activities": ["string", ...],
+            "activities": ["string", ...] — must include a signature synthesis project,
             "resources": ["string", ...]
         }
     ],
-    "surprise_factor": "string — a final, memorable line that ties everything together"
+    "surprise_factor": "string — 2-3 sentences that tie the whole journey together \
+    and leave the user with a fresh perspective on their own interests"
 }
 
-Be generous with content. Each week should feel like a real, actionable plan.
+Be GENEROUS with content. Each week should feel like a real, detailed plan.
 Do NOT include any text outside the JSON. No markdown fences. Raw JSON only."""
 
 
@@ -64,7 +95,7 @@ def _call_anthropic(api_key: str, model: str, user_message: str) -> str:
     client = anthropic.Anthropic(api_key=api_key)
     response = client.messages.create(
         model=model,
-        max_tokens=4096,
+        max_tokens=8192,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
     )
@@ -77,7 +108,7 @@ def _call_openai_compatible(api_key: str, model: str, base_url: str, user_messag
     client = OpenAI(api_key=api_key, base_url=base_url)
     response = client.chat.completions.create(
         model=model,
-        max_tokens=4096,
+        max_tokens=8192,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
@@ -149,10 +180,15 @@ def generate_plan(interests: list, picked_domain: str, difficulty: str = "2") ->
     }
     diff_note = difficulty_map.get(str(difficulty), difficulty_map["2"])
 
+    seed = random.randint(1, 999999)
+    angle_hint = "odd seed: start from a surprising historical anecdote" if seed % 2 == 1 else "even seed: start from a surprising modern application"
+
     user_message = (
+        f"[random_seed={seed}]\n"
         f"My current interests are: {', '.join(interests)}.\n"
         f"Surprise me with a learning plan for: {picked_domain}\n"
-        f"Difficulty level: {diff_note}"
+        f"Difficulty level: {diff_note}\n"
+        f"Angle hint ({angle_hint})"
     )
 
     if provider == "anthropic":

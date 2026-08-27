@@ -55,21 +55,47 @@ class TestGeneratePlanOpenAICompatible:
     def test_args_passed_through(self):
         interests = ["AI", "音乐"]
         domain = "真菌学 (Mycology)"
-        expected_msg = (
-            f"My current interests are: {', '.join(interests)}.\n"
-            f"Surprise me with a learning plan for: {domain}\n"
-            f"Difficulty level: 标准 — 理论与实践平衡，适合自学"
-        )
+        diff_note = "标准 — 理论与实践平衡，适合自学"
 
         with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
-             patch("surprise_plan.backend.provider._call_openai_compatible") as call:
+             patch("surprise_plan.backend.provider._call_openai_compatible") as call, \
+             patch("surprise_plan.backend.provider.random.randint", return_value=42):
             c = _cfg()
             cfg.return_value = c
             call.return_value = json.dumps(FAKE_PLAN)
             generate_plan(interests, domain)
 
+        seed = 42
+        angle = "even seed: start from a surprising modern application"
+        expected_msg = (
+            f"[random_seed={seed}]\n"
+            f"My current interests are: {', '.join(interests)}.\n"
+            f"Surprise me with a learning plan for: {domain}\n"
+            f"Difficulty level: {diff_note}\n"
+            f"Angle hint ({angle})"
+        )
+
         args = call.call_args[0]
-        assert args == (c["api_key"], c["model"], c["base_url"], expected_msg)
+        assert args[0] == c["api_key"]
+        assert args[1] == c["model"]
+        assert args[2] == c["base_url"]
+        assert args[3] == expected_msg
+
+    def test_random_seed_changes(self):
+        """Different calls produce different seeds, ensuring variety."""
+        with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
+             patch("surprise_plan.backend.provider._call_openai_compatible") as call, \
+             patch("surprise_plan.backend.provider.random.randint", side_effect=[1, 2]):
+            c = _cfg()
+            cfg.return_value = c
+            call.return_value = json.dumps(FAKE_PLAN)
+            generate_plan(["AI"], "真菌学 (Mycology)")
+            first_msg = call.call_args[0][3]
+            generate_plan(["AI"], "真菌学 (Mycology)")
+            second_msg = call.call_args[0][3]
+        assert "[random_seed=1]" in first_msg
+        assert "[random_seed=2]" in second_msg
+        assert first_msg != second_msg
 
 
 class TestGeneratePlanAnthropic:

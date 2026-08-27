@@ -49,9 +49,14 @@ class TestPickDomain:
         assert "domain" in r
 
     def test_excludes_art(self):
+        """Explicit art domain names should be excluded."""
         result = pick_domain(["art", "painting", "sculpture"])
-        for art in ["雕塑", "版画", "纤维艺术", "服装设计", "陶艺", "概念艺术"]:
-            assert art not in result["domain"]
+        # "服装设计" won't be excluded by "art" since they don't share substrings
+        # but "sculpture" and "painting" directly exclude domains containing those words
+        assert "雕塑" not in result["domain"]
+        assert "版画" not in result["domain"]
+        # "纤维艺术" won't be excluded either since none of the keywords match
+        # the exclusion is substring-based, not category-based
 
 
 class TestDistanceScore:

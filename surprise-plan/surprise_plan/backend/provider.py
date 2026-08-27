@@ -21,20 +21,22 @@ interests, you NEVER recommend more of the same. Instead, you reach into an \
 unexpected domain and show them something they didn't know they wanted to learn.
 
 Your tone: enthusiastic, slightly conspiratorial, like you're sharing a secret. \
-Use vivid language. Make the unfamiliar feel irresistible.
+Use vivid language. Make the unfamiliar feel irresistible. Write in Chinese.
 
 Output MUST be valid JSON matching this exact schema:
 {
-    "domain": "string — the picked domain name",
+    "domain": "string — the picked domain name (Chinese + English)",
     "tagline": "string — one punchy sentence selling this domain",
-    "why_interesting": "string — 2-3 sentences on what makes this domain fascinating",
-    "connections": ["string", ...] — 2-3 creative bridges to the user's stated interests,
+    "why_interesting": "string — 4-5 sentences on what makes this domain fascinating",
+    "connections": ["string", ...] — 3-4 creative bridges to the user's stated interests,
+    "key_terms": ["string", ...] — 5-6 essential terms/concepts with one-line explanations,
+    "fun_fact": "string — a surprising, memorable fact about this domain",
     "learning_path": [
         {
             "week": 1,
             "theme": "string",
-            "activities": ["string", ...] — 2-3 concrete things to do,
-            "resources": ["string", ...] — 1-2 specific resources
+            "activities": ["string", ...] — 3-4 concrete, actionable things to do this week,
+            "resources": ["string", ...] — 2-3 specific resources (books, videos, courses)
         },
         {
             "week": 2, ...
@@ -49,9 +51,10 @@ Output MUST be valid JSON matching this exact schema:
             "resources": ["string", ...]
         }
     ],
-    "surprise_factor": "string — a final, memorable line"
+    "surprise_factor": "string — a final, memorable line that ties everything together"
 }
 
+Be generous with content. Each week should feel like a real, actionable plan.
 Do NOT include any text outside the JSON. No markdown fences. Raw JSON only."""
 
 
@@ -61,7 +64,7 @@ def _call_anthropic(api_key: str, model: str, user_message: str) -> str:
     client = anthropic.Anthropic(api_key=api_key)
     response = client.messages.create(
         model=model,
-        max_tokens=2048,
+        max_tokens=4096,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
     )
@@ -74,7 +77,7 @@ def _call_openai_compatible(api_key: str, model: str, base_url: str, user_messag
     client = OpenAI(api_key=api_key, base_url=base_url)
     response = client.chat.completions.create(
         model=model,
-        max_tokens=2048,
+        max_tokens=4096,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
@@ -108,7 +111,7 @@ def get_config_summary() -> dict:
     }
 
 
-def generate_plan(interests: list, picked_domain: str) -> dict:
+def generate_plan(interests: list, picked_domain: str, difficulty: str = "2") -> dict:
     """Generate a surprise learning plan via LLM API.
 
     Supports: Claude, OpenAI, DeepSeek, Zhipu GLM, StepFun, Doubao,
@@ -139,9 +142,17 @@ def generate_plan(interests: list, picked_domain: str) -> dict:
                 f"  运行 surprise-plan config set --provider {provider} --base-url YOUR_URL"
             )
 
+    difficulty_map = {
+        "1": "轻松入门 — 用浅显有趣的方式讲解，少用专业术语，多用类比和故事",
+        "2": "标准 — 理论与实践平衡，适合自学",
+        "3": "深入挑战 — 硬核内容，大量实践项目，适合有基础的学习者",
+    }
+    diff_note = difficulty_map.get(str(difficulty), difficulty_map["2"])
+
     user_message = (
         f"My current interests are: {', '.join(interests)}.\n"
-        f"Surprise me with a learning plan for: {picked_domain}"
+        f"Surprise me with a learning plan for: {picked_domain}\n"
+        f"Difficulty level: {diff_note}"
     )
 
     if provider == "anthropic":

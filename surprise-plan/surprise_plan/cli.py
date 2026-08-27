@@ -75,7 +75,7 @@ def default(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False):
+def _run(interests: list, animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2"):
     """Animation -> domain pick -> API call -> display plan."""
     if not interests:
         console.print("[red]错误：请至少提供一个兴趣领域。[/red]")
@@ -96,6 +96,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         console.print("[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
         console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
+        console.print(f"[yellow]难度: {'轻松入门' if difficulty == '1' else '深入挑战' if difficulty == '3' else '标准'}[/yellow]")
         console.print()
         console.print(f"[dim]AI 引擎: {provider}[/dim]")
         console.print("[yellow]即将为你随机揭示一个陌生领域...[/yellow]")
@@ -111,7 +112,7 @@ def _run(interests: list, animation: str, speed: float, regenerate: bool = False
         if demo_mode:
             plan = _generate_demo_plan()
         else:
-            plan = generate_plan(interests, pick["domain"])
+            plan = generate_plan(interests, pick["domain"], difficulty=difficulty)
     except EnvironmentError as e:
         console.print(f"[red]{e}[/red]")
         console.print()
@@ -150,6 +151,7 @@ def main(
     demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
     animation: str = typer.Option("default", "--animation", "-a", help="动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
+    difficulty: str = typer.Option("2", "--difficulty", "-d", help="难度: 1=轻松, 2=标准, 3=深入"),
 ):
     """[TARGET] Surprise-Plan — 打破算法茧房，随机生成学习计划"""
     if interests is None:
@@ -167,7 +169,11 @@ def main(
         console.print(f"可用: {', '.join(valid_anims)}")
         raise typer.Exit(1)
 
-    _run(interest_list, animation, speed, demo_mode=demo)
+    if difficulty not in ("1", "2", "3"):
+        console.print(f"[red]难度必须是 1、2 或 3[/red]")
+        raise typer.Exit(1)
+
+    _run(interest_list, animation, speed, demo_mode=demo, difficulty=difficulty)
 
 
 # ─── Helpers ───────────────────────────────────────────────
@@ -355,6 +361,14 @@ _DEMO_PLAN = {
         "微距摄影技巧可以直接迁移到蜂巢内部拍摄",
         "AI蜂群算法（Swarm Intelligence）正是受此启发",
     ],
+    "key_terms": [
+        "蜂群意识 (Swarm Intelligence) — 无中央控制的分布式决策系统",
+        "摇摆舞 (Waggle Dance) — 蜜蜂传递食物位置信息的8字形舞蹈",
+        "蜂巢六边形 (Honeycomb Hexagon) — 自然界最高效的存储结构",
+        "信息素 (Pheromone) — 蜜蜂之间的化学通信信号",
+        "蜂王浆 (Royal Jelly) — 决定蜜蜂幼虫发育为蜂王的特殊分泌物",
+    ],
+    "fun_fact": "蜜蜂的翅膀每秒扇动 230 次，产生的中频嗡嗡声恰好是 C 大调的音高——音乐人养蜂，等于拥有了一个活的节拍器。",
     "learning_path": [
         {
             "week": 1, "theme": "蜂巢的社会结构与蜜蜂语言",
@@ -397,7 +411,17 @@ def _interactive(default_anim: str = "default", demo: bool = False):
     console.print(f"\n[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
     console.print(f"[dim]打破算法茧房 · 随机学习计划生成器[/dim]")
     console.print(f"[dim]输入你的兴趣领域，AI 会刻意避开它们[/dim]")
-    console.print(f"[dim]Enter 重新生成 · n 换动画 · s 设置 API · q 退出[/dim]\n")
+    console.print()
+    console.print(f"[bold]难度选择:[/bold]")
+    console.print(f"  [green]1[/green]. 轻松入门 (浅显易懂，趣味为主)")
+    console.print(f"  [green]2[/green]. 标准 (平衡理论与实践)")
+    console.print(f"  [green]3[/green]. 深入挑战 (硬核内容，大量实践)")
+
+    difficulty = Prompt.ask(
+        f"\n[yellow]选择难度[/yellow]",
+        choices=["1", "2", "3"],
+        default="2",
+    )
 
     animation = default_anim
     raw = Prompt.ask(f"\n[green]你的兴趣领域[/green]（逗号分隔）", default="")
@@ -414,12 +438,13 @@ def _interactive(default_anim: str = "default", demo: bool = False):
     if anim_choice in {"default", "lightning", "chain", "laser"}:
         animation = anim_choice
 
-    _run(interests, animation, 1.0, demo_mode=demo)
+    _run(interests, animation, 1.0, demo_mode=demo, difficulty=difficulty)
 
     while True:
         console.print()
         action = Prompt.ask(
-            f"[dim]Enter 重新生成 · [yellow]n[/yellow][dim] 换动画 · [cyan]s[/cyan][dim] 设置 API · [red]q[/red][dim] 退出[/dim]",
+            f"[dim]Enter 换领域 · [yellow]d[/yellow][dim] 深入本周 · [cyan]n[/cyan][dim] 换动画 · "
+            f"[green]c[/green][dim] 改兴趣 · [red]q[/red][dim] 退出[/dim]",
             default="",
         ).strip().lower()
 
@@ -437,10 +462,43 @@ def _interactive(default_anim: str = "default", demo: bool = False):
             )
             if anim_choice in {"default", "lightning", "chain", "laser"}:
                 animation = anim_choice
-        elif action == "s":
-            _config_wizard()
+        elif action == "d":
+            _dive_deeper(interests, animation, demo_mode=demo)
+            continue
+        elif action == "":
+            pass  # Enter = regenerate with new domain
 
-        _run(interests, animation, 1.0, regenerate=True, demo_mode=demo)
+        _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
+
+
+def _dive_deeper(interests: list, animation: str, demo_mode: bool = False):
+    """Generate an extended deep-dive plan for a specific week/topic."""
+    console.print(f"\n[bold yellow][DIVE] 深入探索[/bold yellow]")
+    console.print(f"[dim]输入你想深入了解的主题（例如：'真菌的菌丝网络'）[/dim]")
+
+    topic = Prompt.ask(f"\n[green]主题[/green]", default="")
+    if not topic or topic.lower() in ("q", "quit", "exit"):
+        return
+
+    clear_screen()
+    console.print(f"\n[bold yellow][DIVE] 深入: {topic}[/bold yellow]\n")
+    console.print(f"[dim]正在生成深度探索内容...[/dim]\n")
+
+    try:
+        if demo_mode:
+            plan = _generate_demo_plan()
+        else:
+            plan = generate_plan(interests, topic)
+    except Exception as e:
+        console.print(f"[red]生成失败: {e}[/red]")
+        return
+
+    display_plan({
+        "status": "success",
+        "picked_domain": topic,
+        "surprise_score": 0,
+        "plan": plan,
+    })
 
 
 if __name__ == "__main__":

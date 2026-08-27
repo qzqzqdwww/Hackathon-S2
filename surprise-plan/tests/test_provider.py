@@ -10,6 +10,8 @@ FAKE_PLAN = {
     "tagline": "From AI to mushrooms",
     "why_interesting": "...",
     "connections": ["菌丝网络 = 神经网络", "AI 图像识别用于蘑菇分类"],
+    "key_terms": ["mycelium", "spore"],
+    "fun_fact": "蘑菇比植物更接近动物。",
     "learning_path": [
         {"week": 1, "theme": "t1", "activities": ["a1"], "resources": ["r1"]},
         {"week": 2, "theme": "t2", "activities": ["a2"], "resources": ["r2"]},
@@ -53,7 +55,11 @@ class TestGeneratePlanOpenAICompatible:
     def test_args_passed_through(self):
         interests = ["AI", "音乐"]
         domain = "真菌学 (Mycology)"
-        expected_msg = f"My current interests are: {', '.join(interests)}.\nSurprise me with a learning plan for: {domain}"
+        expected_msg = (
+            f"My current interests are: {', '.join(interests)}.\n"
+            f"Surprise me with a learning plan for: {domain}\n"
+            f"Difficulty level: 标准 — 理论与实践平衡，适合自学"
+        )
 
         with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
              patch("surprise_plan.backend.provider._call_openai_compatible") as call:

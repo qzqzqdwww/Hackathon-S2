@@ -12,6 +12,8 @@ def _plan():
         "domain": "真菌学 (Mycology)", "tagline": "From AI to mushrooms",
         "why_interesting": "...",
         "connections": ["菌丝 = 神经网络"],
+        "key_terms": ["term1", "term2"],
+        "fun_fact": "蘑菇比人类早几亿年登上陆地。",
         "learning_path": [
             {"week": 1, "theme": "t1", "activities": ["a1"], "resources": ["r1"]},
             {"week": 2, "theme": "t2", "activities": ["a2"], "resources": ["r2"]},
@@ -83,7 +85,7 @@ class TestMainWithMockedAPI:
     def test_success(self, gen, pick, clear, anim, display):
         r = runner.invoke(app, ["main", "AI, 音乐"])
         assert r.exit_code == 0
-        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)")
+        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)", difficulty="2")
         args = display.call_args[0][0]
         assert args["picked_domain"] == "真菌学 (Mycology)"
 

@@ -171,6 +171,8 @@ def display_plan(data: dict) -> None:
     tagline = plan.get("tagline", "")
     why = plan.get("why_interesting", "")
     connections = plan.get("connections", [])
+    key_terms = plan.get("key_terms", [])
+    fun_fact = plan.get("fun_fact", "")
     learning_path = plan.get("learning_path", [])
     surprise = plan.get("surprise_factor", "")
 
@@ -184,6 +186,21 @@ def display_plan(data: dict) -> None:
 
     console.print(f"\n[bold yellow][SEARCH] 为什么学这个[/bold yellow]")
     console.print(Panel(why, border_style="dim", padding=(0, 1)))
+
+    if key_terms:
+        console.print(f"\n[bold yellow][TERM] 关键概念[/bold yellow]")
+        terms_text = ""
+        for term in key_terms:
+            terms_text += f"  [cyan]•[/cyan] {term}\n"
+        console.print(Panel(terms_text.strip(), border_style="cyan", padding=(0, 1)))
+
+    if fun_fact:
+        console.print(f"\n[bold yellow][WOW] 冷知识[/bold yellow]")
+        console.print(Panel(
+            Text(fun_fact, style="italic light_goldenrod1"),
+            border_style="gold1",
+            padding=(0, 1),
+        ))
 
     if connections:
         console.print(f"\n[bold yellow][BRIDGE] 与你兴趣的意外关联[/bold yellow]")

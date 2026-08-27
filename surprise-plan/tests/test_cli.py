@@ -299,6 +299,12 @@ class TestConfigCommands:
                             "--api-key", "sk-test-1234567890", "--model", "deepseek-chat"])
         assert "deepseek" in runner.invoke(app, ["config", "show"]).output
 
+    @patch("surprise_plan.cli._run_connection_test")
+    def test_set_wizard_calls_connection_test(self, mock_test):
+        r = runner.invoke(app, ["config", "set"], input="1\nsk-test-1234567890\n\n\nn\n")
+        assert r.exit_code == 0
+        mock_test.assert_called_once()
+
     def test_clear_confirms(self):
         r = runner.invoke(app, ["config", "clear"], input="n\n")
         assert r.exit_code == 0

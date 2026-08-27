@@ -3,6 +3,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from openai import APIError
 from surprise_plan.backend.provider import _strip_markdown_fences, generate_plan
 
 FAKE_PLAN = {
@@ -146,6 +147,86 @@ class TestErrorHandling:
             cfg.return_value = _cfg()
             with pytest.raises(ValueError, match="空内容"):
                 generate_plan(["AI"], "真菌学")
+
+
+class TestApiConnection:
+    def _cfg_dict(self, provider="openai", api_key="sk-test", model="gpt-4o-mini", base_url="https://api.openai.com/v1"):
+        return {"provider": provider, "api_key": api_key, "model": model, "base_url": base_url}
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_openai_connection_success(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = self._cfg_dict()
+        with patch("openai.OpenAI") as MockClient, \
+             patch("surprise_plan.backend.provider.time.monotonic") as mock_mono:
+            mock_mono.side_effect = [0.0, 0.1]
+            mock_client = MockClient.return_value
+            mock_client.chat.completions.create.return_value = MagicMock(
+                choices=[MagicMock(message=MagicMock(content="hi"))]
+            )
+            result = test_api_connection("openai", "sk-test", "gpt-4o-mini", "https://api.openai.com/v1")
+        assert result["ok"] is True
+        assert result["provider"] == "openai"
+        assert result["model"] == "gpt-4o-mini"
+        assert result["latency_ms"] > 0
+        assert "error" not in result
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_anthropic_connection_success(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = {"provider": "anthropic", "api_key": "sk-ant-test", "model": "claude-test", "base_url": ""}
+        with patch("anthropic.Anthropic") as MockClient, \
+             patch("surprise_plan.backend.provider.time.monotonic") as mock_mono:
+            mock_mono.side_effect = [0.0, 0.05]
+            mock_client = MockClient.return_value
+            mock_client.messages.create.return_value = MagicMock(content=[MagicMock(text="hi")])
+            result = test_api_connection("anthropic", "sk-ant-test", "claude-test", "")
+        assert result["ok"] is True
+        assert result["provider"] == "anthropic"
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_missing_api_key(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = self._cfg_dict(api_key="")
+        result = test_api_connection("openai", "", "gpt-4o-mini")
+        assert result["ok"] is False
+        assert result["error_type"] == "auth"
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_auth_error_classification(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = self._cfg_dict()
+        with patch("openai.OpenAI") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.chat.completions.create.side_effect = APIError(
+                "401 Unauthorized", request=MagicMock(), body=None
+            )
+            result = test_api_connection("openai", "sk-bad", "gpt-4o-mini")
+        assert result["ok"] is False
+        assert result["error_type"] == "auth"
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_network_error_classification(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = self._cfg_dict()
+        with patch("openai.OpenAI") as MockClient:
+            MockClient.side_effect = ConnectionError("connection timed out")
+            result = test_api_connection("openai", "sk-test", "gpt-4o-mini", "https://bad.host/v1")
+        assert result["ok"] is False
+        assert result["error_type"] == "network"
+
+    @patch("surprise_plan.backend.provider.get_effective_config")
+    def test_model_error_classification(self, mock_cfg):
+        from surprise_plan.backend.provider import test_api_connection
+        mock_cfg.return_value = self._cfg_dict()
+        with patch("openai.OpenAI") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.chat.completions.create.side_effect = APIError(
+                "model not found", request=MagicMock(), body=None
+            )
+            result = test_api_connection("openai", "sk-test", "nonexistent-model")
+        assert result["ok"] is False
+        assert result["error_type"] == "model"
 
 
 class TestStripMarkdownFences:

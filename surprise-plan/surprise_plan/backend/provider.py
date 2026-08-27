@@ -12,6 +12,7 @@ Priority: env vars > config file > built-in defaults
 import json
 import random
 import re
+import time
 
 from .config import get_effective_config, get_provider_config, mask_key
 
@@ -121,6 +122,86 @@ def _call_openai_compatible(api_key: str, model: str, base_url: str, user_messag
     if not text:
         raise ValueError("AI 返回了空内容，请重试。")
     return text.strip()
+
+
+def test_api_connection(provider: str, api_key: str, model: str, base_url: str = "") -> dict:
+    """Lightweight API connectivity test. Returns status dict.
+
+    Keys:
+        ok: bool — whether the connection succeeded
+        provider: str
+        model: str
+        base_url: str
+        latency_ms: float (if ok)
+        error: str (if not ok)
+        error_type: str (if not ok) — "auth", "network", "model", "unknown"
+    """
+    cfg = get_effective_config()
+    provider = provider or cfg.get("provider", "anthropic")
+    api_key = api_key or cfg.get("api_key", "")
+    model = model or cfg.get("model", "")
+    base_url = base_url or cfg.get("base_url", "")
+
+    if not api_key:
+        return {"ok": False, "provider": provider, "error": "API Key 未设置",
+                "error_type": "auth"}
+
+    known = get_provider_config(provider)
+    if provider != "anthropic" and not base_url:
+        base_url = known["base_url"]
+
+    target_model = model or known["model"]
+    start = time.monotonic()
+    try:
+        if provider == "anthropic":
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key, timeout=30.0)
+            client.messages.create(
+                model=target_model,
+                max_tokens=1,
+                messages=[{"role": "user", "content": "Hi"}],
+            )
+        else:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url=base_url, timeout=30.0)
+            client.chat.completions.create(
+                model=target_model,
+                max_tokens=1,
+                messages=[{"role": "user", "content": "Hi"}],
+            )
+        latency = (time.monotonic() - start) * 1000
+        return {
+            "ok": True,
+            "provider": provider,
+            "model": target_model,
+            "base_url": base_url or "(default)",
+            "latency_ms": round(latency, 1),
+        }
+    except Exception as e:
+        elapsed = time.monotonic() - start
+        err_msg = str(e)
+        error_type = _classify_api_error(err_msg)
+        return {
+            "ok": False,
+            "provider": provider,
+            "model": target_model,
+            "base_url": base_url or "(default)",
+            "latency_ms": round(elapsed * 1000, 1),
+            "error": err_msg,
+            "error_type": error_type,
+        }
+
+
+def _classify_api_error(err_msg: str) -> str:
+    """Classify API error into a human-readable category."""
+    lower = err_msg.lower()
+    if any(k in lower for k in ("401", "403", "auth", "invalid api key", "unauthorized")):
+        return "auth"
+    if any(k in lower for k in ("timeout", "timed out", "connection", "network", "dns")):
+        return "network"
+    if any(k in lower for k in ("model", "not found", "404")):
+        return "model"
+    return "unknown"
 
 
 _FENCE_RE = re.compile(r'(?s)^.*?```(?:json)?\s*\n?|\n?\s*```.*')

@@ -335,8 +335,17 @@ def _config_wizard():
     console.print(f"\n[green]配置已保存！[/green]")
     _print_config()
 
+    # Offer to test the connection
+    test_choice = Prompt.ask(
+        f"\n[yellow]测试 API 连接？[/yellow]",
+        choices=["y", "n"],
+        default="y",
+    )
+    if test_choice == "y":
+        _run_connection_test(cfg)
 
-def _parse_provider_choice(choice: str, names: list) -> str:
+
+def _parse_provider_choice(choice: str, names: list[str]) -> str:
     try:
         idx = int(choice.strip()) - 1
         if 0 <= idx < len(names):
@@ -368,6 +377,55 @@ def _print_config():
     console.print(f"  Key:   {s['api_key']}")
     console.print(f"  地址: {s['base_url']}")
     console.print(f"  模型: {s['model']}\n")
+
+
+def _run_connection_test(cfg: dict):
+    """Test API connectivity and display results."""
+    from rich.panel import Panel
+    from .backend.provider import test_api_connection
+
+    console.print(f"\n[dim]正在测试连接...[/dim]")
+    result = test_api_connection(
+        provider=cfg.get("provider", ""),
+        api_key=cfg.get("api_key", ""),
+        model=cfg.get("model", ""),
+        base_url=cfg.get("base_url", ""),
+    )
+
+    if result["ok"]:
+        console.print(f"\n[green][PASS] 连接成功！[/green]")
+        console.print(f"  引擎:    [cyan]{result['provider']}[/cyan]")
+        console.print(f"  模型:    [cyan]{result['model']}[/cyan]")
+        console.print(f"  地址:    [dim]{result['base_url']}[/dim]")
+        console.print(f"  延迟:    [yellow]{result['latency_ms']} ms[/yellow]")
+    else:
+        error_type_label = {
+            "auth": "认证失败",
+            "network": "网络/连接错误",
+            "model": "模型不可用",
+            "unknown": "未知错误",
+        }.get(result.get("error_type", "unknown"), "错误")
+        console.print(f"\n[red][FAIL] 连接失败 — {error_type_label}[/red]")
+        console.print(f"  引擎:  [cyan]{result['provider']}[/cyan]")
+        console.print(f"  模型:  [cyan]{result['model']}[/cyan]")
+        console.print(f"  地址:  [dim]{result['base_url']}[/dim]")
+        console.print(f"  延迟:  [dim]{result['latency_ms']} ms[/dim]")
+        console.print(f"  错误:  [red]{result['error'][:200]}[/red]")
+        console.print()
+        console.print(f"[yellow]建议:[/yellow]")
+        if result.get("error_type") == "auth":
+            console.print(f"  - 检查 API Key 是否正确")
+            console.print(f"  - 运行 surprise-plan config set 重新设置")
+        elif result.get("error_type") == "network":
+            console.print(f"  - 检查网络连接")
+            console.print(f"  - 检查 API 地址是否正确")
+            console.print(f"  - 如使用代理，检查代理设置")
+        elif result.get("error_type") == "model":
+            console.print(f"  - 模型名称可能不正确，检查拼写")
+            console.print(f"  - 确认账号有权限访问该模型")
+        else:
+            console.print(f"  - 查看上方错误信息")
+            console.print(f"  - 运行 surprise-plan config show 确认配置")
 
 
 # ─── Demo Plan Generator ─────────────────────────────────────

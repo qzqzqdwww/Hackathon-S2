@@ -83,10 +83,11 @@ async def handle_tools_list(req_id: Any, params: dict) -> dict:
     return _make_response(req_id, {"tools": TOOLS})
 
 
-async def handle_tools_call(req_id: Any, params: dict) -> dict:
-    from ..backend.provider import generate_plan
-    from ..backend.domain_picker import pick_domain
+from ..backend.provider import generate_plan
+from ..backend.domain_picker import pick_domain
 
+
+async def handle_tools_call(req_id: Any, params: dict) -> dict:
     tool_name = params.get("name")
     arguments = params.get("arguments", {})
 

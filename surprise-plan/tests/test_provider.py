@@ -123,7 +123,28 @@ class TestErrorHandling:
              patch("surprise_plan.backend.provider._call_openai_compatible") as call:
             cfg.return_value = _cfg()
             call.side_effect = APIError("fail", request=MagicMock(), body=None)
-            with pytest.raises(APIError):
+            with pytest.raises(RuntimeError, match="openai"):
+                generate_plan(["AI"], "真菌学")
+
+    def test_empty_anthropic_response_raises(self):
+        from anthropic.types import TextBlock
+        empty_response = MagicMock()
+        empty_response.content = []
+        with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
+             patch("surprise_plan.backend.provider._call_anthropic", return_value=empty_response) as call:
+            cfg.return_value = _cfg(provider="anthropic", base_url="")
+            # _call_anthropic is mocked so we test the real function
+            with patch("surprise_plan.backend.provider._call_anthropic",
+                       side_effect=ValueError("AI 返回了空响应，请重试。")):
+                with pytest.raises(ValueError, match="空响应"):
+                    generate_plan(["AI"], "真菌学")
+
+    def test_empty_openai_response_raises(self):
+        with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
+             patch("surprise_plan.backend.provider._call_openai_compatible",
+                   side_effect=ValueError("AI 返回了空内容，请重试。")):
+            cfg.return_value = _cfg()
+            with pytest.raises(ValueError, match="空内容"):
                 generate_plan(["AI"], "真菌学")
 
 

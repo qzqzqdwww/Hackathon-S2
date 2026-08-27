@@ -93,20 +93,22 @@ Do NOT include any text outside the JSON. No markdown fences. Raw JSON only."""
 def _call_anthropic(api_key: str, model: str, user_message: str) -> str:
     import anthropic
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(api_key=api_key, timeout=120.0)
     response = client.messages.create(
         model=model,
         max_tokens=8192,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
     )
+    if not response.content:
+        raise ValueError("AI 返回了空响应，请重试。")
     return response.content[0].text.strip()
 
 
 def _call_openai_compatible(api_key: str, model: str, base_url: str, user_message: str) -> str:
     from openai import OpenAI
 
-    client = OpenAI(api_key=api_key, base_url=base_url)
+    client = OpenAI(api_key=api_key, base_url=base_url, timeout=120.0)
     response = client.chat.completions.create(
         model=model,
         max_tokens=8192,
@@ -115,7 +117,10 @@ def _call_openai_compatible(api_key: str, model: str, base_url: str, user_messag
             {"role": "user", "content": user_message},
         ],
     )
-    return response.choices[0].message.content.strip()
+    text = response.choices[0].message.content
+    if not text:
+        raise ValueError("AI 返回了空内容，请重试。")
+    return text.strip()
 
 
 _FENCE_RE = re.compile(r'(?s)^.*?```(?:json)?\s*\n?|\n?\s*```.*')
@@ -197,12 +202,12 @@ def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2
             content = _call_anthropic(api_key, model, user_message)
         else:
             content = _call_openai_compatible(api_key, model, base_url, user_message)
-    except json.JSONDecodeError:
-        raise ValueError("AI 返回的内容不是有效的 JSON，请重试。")
-    except Exception:
+    except ValueError:
         raise
+    except Exception as e:
+        raise RuntimeError(f"AI 调用失败 [{provider}]: {e}") from e
 
     try:
         return json.loads(_strip_markdown_fences(content))
     except json.JSONDecodeError:
-        raise ValueError("AI 返回的内容无法解析，请重试或更换模型。")
+        raise ValueError("AI 返回的内容无法解析为 JSON，请重试或更换模型。")

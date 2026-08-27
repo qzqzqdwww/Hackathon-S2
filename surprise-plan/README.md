@@ -1,17 +1,11 @@
 # Surprise-Plan
 
-[English](#surprise-plan) | [中文](#中文)
+[English](#english) | [中文](#中文)
 
 **打破算法茧房 · 随机学习计划生成器**  
 大工黑客松 S2 — Track 03 · 开放原子
 
 ---
-
-## 这是什么
-
-Surprise-Plan 是一个终端原生 CLI 工具。你输入自己的兴趣领域，系统**刻意避开**它们，随机选出一个你从未涉猎的领域，生成一份 4 周学习计划，并画出与你的兴趣之间的意外关联桥。
-
-**最好的发现，往往来自意外。**
 
 ## English
 
@@ -20,6 +14,14 @@ Surprise-Plan is a terminal-native CLI tool that breaks you out of your algorith
 You tell it your interests — it **deliberately excludes** them, then randomly selects an unfamiliar domain and generates a structured 4-week learning plan with creative bridges drawn back to what you already love.
 
 **The best discoveries come from accidents.**
+
+---
+
+## 中文
+
+Surprise-Plan 是一个终端原生 CLI 工具。你输入自己的兴趣领域，系统**刻意避开**它们，随机选出一个你从未涉猎的领域，生成一份 4 周学习计划，并画出与你的兴趣之间的意外关联桥。
+
+**最好的发现，往往来自意外。**
 
 ---
 
@@ -34,13 +36,11 @@ cd Hackathon-S2/surprise-plan
 pip install -e .
 
 # 安装 AI 引擎 SDK（至少选一个）
-pip install ".[openai]"      # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI
+pip install ".[openai]"      # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI / SiliconFlow
 pip install ".[anthropic]"   # Claude
 ```
 
----
-
-## 配置 API
+### 配置 API
 
 支持任意 OpenAI 兼容 API：Claude、DeepSeek、智谱 GLM、阶跃星辰、豆包、SiliconFlow、OpenAI 等。
 
@@ -77,12 +77,14 @@ surprise-plan --list-animations
 
 ### 交互模式快捷键
 
-- `Enter` — 重新生成（换一个陌生领域）
-- `d` — 深入探索（对当前 PLAN 的某个主题展开）
-- `e` — 导出 PLAN 到文件（.json / .md / .txt / .html）
-- `n` — 切换动画样式
-- `c` — 修改兴趣领域
-- `q` — 退出
+| 按键 | 功能 |
+|------|------|
+| `Enter` | 重新生成（换一个陌生领域） |
+| `d` | 深入探索（对当前 PLAN 的某个主题展开） |
+| `e` | 导出 PLAN 到文件（.json / .md / .txt / .html） |
+| `n` | 切换动画样式 |
+| `c` | 修改兴趣领域 |
+| `q` | 退出 |
 
 ---
 
@@ -92,7 +94,7 @@ surprise-plan --list-animations
 python -m pytest tests/ -v
 ```
 
-80 个 mock 测试，覆盖领域选取、配置管理、API 调用、CLI 入口、导出功能，无需真实 API Key。
+94 个 pytest mock 测试，覆盖领域选取、配置管理、API 调用、CLI 入口、导出功能、连接测试，无需真实 API Key。
 
 ---
 
@@ -112,7 +114,7 @@ surprise-plan/
 │       ├── plan_exporter.py  # 多格式导出 (.json / .md / .txt / .html)
 │       ├── provider.py       # 多 provider LLM 客户端
 │       └── mcp_server.py     # MCP stdio 服务器
-├── tests/                    # 80 个 pytest mock 测试
+├── tests/                    # 94 个 pytest mock 测试
 ├── pyproject.toml
 └── README.md
 ```
@@ -124,9 +126,10 @@ surprise-plan/
 | `cli.py` | Typer CLI：交互模式、直接模式、config 子命令、导出功能 |
 | `display.py` | Rich 面板渲染 + 4 种 ASCII whip 动画（default/lightning/chain/laser） |
 | `backend/domain_picker.py` | 159 个细分领域池，按学术分类组织；加权随机 + 语义距离评分 |
-| `backend/plan_exporter.py` | PLAN 导出：自动检测格式，支持 json/md/txt/html |
-| `backend/provider.py` | 多 provider 抽象：Anthropic + 所有 OpenAI 兼容 API，8k max_tokens |
+| `backend/plan_exporter.py` | PLAN 导出：自动检测格式，支持 json/md/txt/html，HTML 转义防 XSS |
+| `backend/provider.py` | 多 provider 抽象：Anthropic + 所有 OpenAI 兼容 API，8k max_tokens，连接测试 |
 | `backend/config.py` | 8 个内置 provider 默认值 + JSON 持久化 + env 优先级 |
+| `backend/mcp_server.py` | MCP stdio 服务器，供 Claude Desktop 等客户端调用 |
 
 ---
 
@@ -150,6 +153,7 @@ surprise-plan/
 - API Key 存储在 `~/.surprise-plan/config.json`，已加入 `.gitignore`
 - 仅向用户选择的 AI 引擎发送请求，不记录或分享任何数据
 - Key 在界面中仅显示前 4 位 + 后 4 位
+- 导出文件时自动转义 HTML 特殊字符，防止 XSS
 
 ---
 
@@ -164,13 +168,13 @@ surprise-plan/
 
 ---
 
-## 历史版本
+## 版本历史
 
-| 版本 | 领域数 | 测试数 | 核心特性 | 下载方式 |
-|------|--------|--------|----------|---------|
-| **v2** (最新) | 159 | 80 | 8k token 深度生成 + 随机 seed + 多格式导出 + 交互导出 | `git clone -b ver/v2 <url>` |
-| **v1** | 159 | 68 | 回答"内容少+无互动"：丰富生成内容 + 交互模式 + 难度选择 + 随机 demo | `git clone -b ver/v1 <url>` |
-| **v0** | 49 | 0 | 基础版本，固定内容，无交互 | `git clone -b ver/v0 <url>` |
+| 版本 | 测试数 | 核心特性 |
+|------|--------|----------|
+| **v2** (最新) | 94 | 8k token 深度生成 + 随机 seed + 多格式导出 + API 连接测试 + XSS 防护 |
+| **v1** | 68 | 丰富生成内容 + 交互模式 + 难度选择 + 随机 demo + 4 种动画 |
+| **v0** | 0 | 基础版本，49 领域池，固定内容 |
 
 ### v2 更新内容（对比 v1）
 
@@ -193,20 +197,24 @@ surprise-plan/
 - 支持 **4 种导出格式**：`.json`、`.md`（Markdown）、`.txt`（纯文本）、`.html`（带样式）
 - 格式**自动检测**（根据文件扩展名）
 - 自动创建目标文件的父目录
+- HTML 导出自动转义，防止 LLM 生成内容中的 XSS 攻击
 - 两种使用方式：
   - 命令行：`surprise-plan main --output plan.md "AI, 音乐"`
   - 交互模式：生成后按 `e` 键，输入文件路径即可导出
 
-#### 交互模式增强
+#### API 连接测试
 
-- 新增 `e`（导出）快捷键
-- `_run()` 返回 `(pick, plan)` 元组，交互循环复用上次结果用于导出
+- 配置向导保存后自动询问是否测试 API 连接
+- `provider.py` 新增 `test_api_connection()` 函数，发送 lightweight 请求（max_tokens=1）并测量延迟
+- 错误自动分类：`auth` / `network` / `model` / `unknown`，并给出 actionable 建议
 
-#### 测试覆盖
+#### 代码质量
 
-- 从 68 个增至 **80 个** pytest mock 测试
-- 新增导出功能测试（格式检测、文件创建、内容正确性、父目录创建）
-- 新增随机 seed 测试（验证不同调用产生不同 prompt）
+- API 调用增加 **120s 超时**，防止无限挂起
+- 空响应 guard，防止 API 返回空内容时崩溃
+- 全局状态不再被 demo 模式 mutate
+- 修复 20+ 代码审查发现的问题（XSS、难度传递、deprecation warnings 等）
+- **94 个 mock 测试**全部通过
 
 ---
 
@@ -223,41 +231,29 @@ v1 直接回答了"Token消耗少、生成内容少、用户无互动"的反馈�
 
 ---
 
-### v0 → v1 → v2 完整对比
+### 全版本对比
 
 | 方面 | v0 | v1 | v2 |
 |------|----|----|----|
 | 领域池 | 49 | 159 | 159 |
-| 测试数 | 0 | 68 | 80 |
+| 测试数 | 0 | 68 | 94 |
 | max_tokens | 4096 | 4096 | 8192 |
-| why_interesting | 4-5 句 | 4-5 句 | 6-8 句 |
-| connections | 3-4 条 | 3-4 条 | 4-5 条 |
-| key_terms | 5-6 个 | 5-6 个 | 6-8 个 |
-| fun_fact | 1 句 | 1 句 | 2-3 句 |
-| activities/周 | 3-4 个 | 3-4 个 | 4-5 个 |
-| resources/周 | 2-3 个 | 2-3 个 | 3-4 个 |
-| surprise_factor | 1 句 | 1 句 | 2-3 句 |
+| 超时保护 | 无 | 无 | 120s |
 | 随机性 | 无 | 无 | 随机 seed 注入 |
 | 交互模式 | 无 | 有 | 有 + 导出 |
 | 导出功能 | 无 | 无 | .json / .md / .txt / .html |
 | 难度选择 | 无 | 有 | 有 |
 | 演示模式 | 无 | 有 | 有 |
+| API 连接测试 | 无 | 无 | 有（内置配置向导） |
+| XSS 防护 | 无 | 无 | 有 |
 
 ---
 
 ### 下载指定版本
 
 ```bash
-# v2（最新，丰富内容 + 导出 + 随机 seed）
-git clone -b ver/v2 https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-plan
-
-# v1（丰富内容 + 交互模式，159 领域池）
-git clone -b ver/v1 https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-plan
-
-# v0（基础版，49 领域池）
-git clone -b ver/v0 https://github.com/qzqzqdwww/Hackathon-S2.git
+# 最新版本（包含所有功能）
+git clone https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
 # 在已克隆的仓库中切换版本
@@ -266,7 +262,7 @@ git switch ver/v1                # 切换到 v1
 ```
 
 > 也可在 GitHub Releases 页面下载 ZIP：
-> - [v2 (最新)](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2)
+> - [最新版本](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2)
 > - [v1](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1)
 > - [v0](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v0)
 

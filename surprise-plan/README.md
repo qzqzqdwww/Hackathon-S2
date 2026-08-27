@@ -168,9 +168,9 @@ surprise-plan/
 
 | 版本 | 领域数 | 测试数 | 核心特性 | 下载方式 |
 |------|--------|--------|----------|---------|
-| **v2** (最新) | 159 | 80 | 8k token 深度生成 + 随机 seed + 多格式导出 + 交互导出 | `git clone` 默认获取 |
-| **v1** | 159 | 68 | 回答"内容少+无互动"：丰富生成内容 + 交互模式 + 难度选择 + 随机 demo | `git clone --branch v1 <url>` |
-| **v0** | 49 | 0 | 基础版本，固定内容，无交互 | `git clone --branch v0 <url>` |
+| **v2** (最新) | 159 | 80 | 8k token 深度生成 + 随机 seed + 多格式导出 + 交互导出 | `git clone -b ver/v2 <url>` |
+| **v1** | 159 | 68 | 回答"内容少+无互动"：丰富生成内容 + 交互模式 + 难度选择 + 随机 demo | `git clone -b ver/v1 <url>` |
+| **v0** | 49 | 0 | 基础版本，固定内容，无交互 | `git clone -b ver/v0 <url>` |
 
 ### v2 更新内容（对比 v1）
 
@@ -248,21 +248,21 @@ v1 直接回答了"Token消耗少、生成内容少、用户无互动"的反馈�
 ### 下载指定版本
 
 ```bash
-# 下载最新版本（v2，即 main 分支）
-git clone https://github.com/qzqzqdwww/Hackathon-S2.git
+# v2（最新，丰富内容 + 导出 + 随机 seed）
+git clone -b ver/v2 https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
-# 下载 v1（丰富内容 + 交互模式，159 领域池）
-git clone --branch v1 https://github.com/qzqzqdwww/Hackathon-S2.git
+# v1（丰富内容 + 交互模式，159 领域池）
+git clone -b ver/v1 https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
-# 下载 v0（基础版，49 领域池）
-git clone --branch v0 https://github.com/qzqzqdwww/Hackathon-S2.git
+# v0（基础版，49 领域池）
+git clone -b ver/v0 https://github.com/qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
-# 在已克隆的仓库中切换
-git tag                    # 查看所有可用版本
-git checkout v1            # 切换到 v1
+# 在已克隆的仓库中切换版本
+git branch -a                    # 查看所有可用版本分支
+git switch ver/v1                # 切换到 v1
 ```
 
 > 也可在 GitHub Releases 页面下载 ZIP：

@@ -56,7 +56,7 @@ class TestGeneratePlanOpenAICompatible:
     def test_args_passed_through(self):
         interests = ["AI", "音乐"]
         domain = "真菌学 (Mycology)"
-        diff_note = "深入 — 硬核内容，大量实践项目，适合有基础的学习者"
+        diff_note = "平衡 — 理论与实践兼顾，适合自学"
 
         with patch("surprise_plan.backend.provider.get_effective_config") as cfg, \
              patch("surprise_plan.backend.provider._call_openai_compatible") as call, \

@@ -75,7 +75,7 @@ def default(
 
 # ─── Core workflow ─────────────────────────────────────────
 
-def _run(interests: list[str], animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "2", output: str = None):
+def _run(interests: list[str], animation: str, speed: float, regenerate: bool = False, demo_mode: bool = False, difficulty: str = "1", output: str = None):
     """Animation -> domain pick -> API call -> display plan -> optional export.
 
     Returns (pick, plan) dicts so the interactive loop can reuse them.
@@ -99,7 +99,7 @@ def _run(interests: list[str], animation: str, speed: float, regenerate: bool = 
         console.print(f"[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
         console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
-        console.print(f"[yellow]难度: {'深入' if difficulty == '3' else '平衡'}[/yellow]")
+        console.print(f"[yellow]难度: {'深入' if difficulty == '2' else '平衡'}[/yellow]")
         console.print()
         console.print(f"[dim]AI 引擎: {provider}[/dim]")
         console.print("[yellow]即将为你随机揭示一个陌生领域...[/yellow]")
@@ -186,9 +186,6 @@ def main(
     if difficulty not in ("1", "2"):
         console.print(f"[red]难度必须是 1（平衡）或 2（深入）[/red]")
         raise typer.Exit(1)
-
-    # Map user-facing 1/2 to internal 2/3
-    difficulty = {"1": "2", "2": "3"}[difficulty]
 
     _run(interest_list, animation, speed, demo_mode=demo, difficulty=difficulty, output=output)
 
@@ -563,8 +560,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         choices=["1", "2"],
         default="1",
     )
-    # Map user-facing 1/2 to internal 2/3
-    difficulty = {"1": "2", "2": "3"}[difficulty_choice]
+    difficulty = difficulty_choice
 
     animation = default_anim
     raw = Prompt.ask(f"\n[green]你的兴趣领域[/green]（逗号分隔）", default="")
@@ -648,7 +644,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         last_pick, last_plan = _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
 
 
-def _dive_deeper(interests: list[str], difficulty: str = "2", demo_mode: bool = False):
+def _dive_deeper(interests: list[str], difficulty: str = "1", demo_mode: bool = False):
     """Generate an extended deep-dive plan for a specific week/topic."""
     console.print(f"\n[bold yellow][DIVE] 深入探索[/bold yellow]")
     console.print(f"[dim]输入你想深入了解的主题（例如：'真菌的菌丝网络'）[/dim]")

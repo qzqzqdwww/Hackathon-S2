@@ -85,7 +85,7 @@ class TestMainWithMockedAPI:
     def test_success(self, gen, pick, clear, anim, display):
         r = runner.invoke(app, ["main", "AI, 音乐"])
         assert r.exit_code == 0
-        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)", difficulty="3")
+        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)", difficulty="2")
         args = display.call_args[0][0]
         assert args["picked_domain"] == "真菌学 (Mycology)"
 
@@ -297,10 +297,10 @@ class TestInteractiveMode:
     def test_dive_deeper_passes_difficulty(self, mock_gen, mock_display):
         from surprise_plan.cli import _dive_deeper
         with patch("rich.prompt.Prompt.ask", return_value="test topic"):
-            _dive_deeper(["AI"], difficulty="3", demo_mode=False)
+            _dive_deeper(["AI"], difficulty="2", demo_mode=False)
         mock_gen.assert_called_once()
         assert mock_gen.call_args[0][1] == "test topic"
-        assert mock_gen.call_args[1]["difficulty"] == "3"
+        assert mock_gen.call_args[1]["difficulty"] == "2"
 
 
 class TestConfigCommands:

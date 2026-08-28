@@ -229,7 +229,7 @@ def get_config_summary() -> dict:
     }
 
 
-def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2") -> dict:
+def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "1") -> dict:
     """Generate a surprise learning plan via LLM API.
 
     Supports: Claude, OpenAI, DeepSeek, Zhipu GLM, StepFun, Doubao,
@@ -263,7 +263,6 @@ def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2
     difficulty_map = {
         "1": "平衡 — 理论与实践兼顾，适合自学",
         "2": "深入 — 硬核内容，大量实践项目，适合有基础的学习者",
-        "3": "深入 — 硬核内容，大量实践项目，适合有基础的学习者",
     }
     diff_note = difficulty_map.get(str(difficulty), difficulty_map["1"])
 

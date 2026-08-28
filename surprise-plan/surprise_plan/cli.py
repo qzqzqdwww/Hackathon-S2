@@ -365,10 +365,13 @@ def _parse_provider_choice(choice: str, names: list[str]) -> str:
 
 def _export_plan(filepath: str, plan_data: dict):
     """Export plan to file with format auto-detected from extension."""
-    from .backend.plan_exporter import export_plan
+    from .backend.plan_exporter import export_plan, detect_format
+    fmt_label = {"json": "JSON", "md": "Markdown", "txt": "纯文本", "html": "HTML"}
     try:
         out_path = export_plan(plan_data, filepath)
-        console.print(f"\n[green]计划已导出至: {out_path}[/green]")
+        fmt = detect_format(filepath)
+        label = fmt_label.get(fmt, fmt)
+        console.print(f"\n[green]计划已导出 ({label}) -> {out_path}[/green]")
     except Exception as e:
         console.print(f"\n[red]导出失败: {e}[/red]")
 
@@ -608,8 +611,15 @@ def _interactive(default_anim: str = "default", demo: bool = False):
             _dive_deeper(interests, difficulty=difficulty, demo_mode=demo)
             continue
         elif action == "e":
+            console.print(
+                f"\n[bold]导出格式:[/bold] "
+                f"[cyan].json[/cyan] 结构化数据  ·  "
+                f"[cyan].md[/cyan] Markdown  ·  "
+                f"[cyan].txt[/cyan] 纯文本  ·  "
+                f"[cyan].html[/cyan] 网页（带样式）"
+            )
             filepath = Prompt.ask(
-                f"\n[green]导出文件路径[/green]",
+                f"[green]导出文件路径[/green]",
                 default="plan.md",
             )
             if filepath:
@@ -623,7 +633,9 @@ def _interactive(default_anim: str = "default", demo: bool = False):
                 try:
                     out = export_plan(plan_data, filepath)
                     fmt = detect_format(filepath)
-                    console.print(f"\n[green]已导出 ({fmt}) -> {out}[/green]")
+                    fmt_label = {"json": "JSON", "md": "Markdown", "txt": "纯文本", "html": "HTML"}
+                    label = fmt_label.get(fmt, fmt)
+                    console.print(f"\n[green]已导出 ({label}) -> {out}[/green]")
                 except Exception as ex:
                     console.print(f"\n[red]导出失败: {ex}[/red]")
             continue

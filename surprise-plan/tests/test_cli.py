@@ -140,13 +140,19 @@ class TestInteractiveMode:
     def test_export_in_interactive(self, mock_export, gen, pick, clear, anim, display):
         mock_export.return_value = "/tmp/plan.md"
         r = runner.invoke(
-            app, [], input="2\nAI\n\n" + "e\n/tmp/plan.md\nq\n"
+            app, [], input="1\nAI\n\n" + "e\n/tmp/plan.md\nq\n"
         )
         assert r.exit_code == 0
         mock_export.assert_called_once()
         args = mock_export.call_args[0]
         assert args[0]["picked_domain"] == "真菌学 (Mycology)"
         assert args[1].endswith("plan.md")
+        # Verify format hint is shown
+        assert "导出格式" in r.output
+        assert ".json" in r.output
+        assert ".md" in r.output
+        assert ".txt" in r.output
+        assert ".html" in r.output
 
     @patch("surprise_plan.cli.generate_plan", return_value=_plan())
     @patch("surprise_plan.cli.pick_domain", return_value=_pick())

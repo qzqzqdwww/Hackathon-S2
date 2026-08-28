@@ -27,10 +27,13 @@ Surprise-Plan 是一个终端原生 CLI 工具。你输入自己的兴趣领域�
 
 ## 快速开始
 
+**推荐方式**：下载 Release ZIP（不含 `.git` 文件夹）  
+→ [GitHub Releases](https://github.com/qzqzqdwww/Hackathon-S2/releases)
+
 ```bash
-# 克隆项目
-git clone https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-plan
+# 1. 下载最新版本的 ZIP 并解压
+# 2. 进入 surprise-plan 目录
+cd surprise-plan
 
 # 安装
 pip install -e .
@@ -39,6 +42,9 @@ pip install -e .
 pip install ".[openai]"      # DeepSeek / 智谱 / 阶跃 / 豆包 / OpenAI / SiliconFlow
 pip install ".[anthropic]"   # Claude
 ```
+
+> **注意**：请使用 GitHub Releases 下载的 ZIP 包，不要直接 `git clone`。  
+> `git clone` 会下载 `.git` 文件夹（包含完整提交历史），占用额外空间且暴露提交记录。
 
 ### 配置 API
 
@@ -268,17 +274,11 @@ v1 直接回答了"Token消耗少、生成内容少、用户无互动"的反馈�
 
 ### 下载指定版本
 
-```bash
-# 最新版本（包含所有功能）
-git clone https://github.com/qzqzqdwww/Hackathon-S2.git
-cd Hackathon-S2/surprise-plan
+所有版本均可在 [GitHub Releases](https://github.com/qzqzqdwww/Hackathon-S2/releases) 页面下载 ZIP 包（不含 `.git`）：
 
-# 在已克隆的仓库中切换版本
-git branch -a                    # 查看所有可用版本分支
-git switch ver/v1                # 切换到 v1
-```
-
-> 也可在 GitHub Releases 页面下载 ZIP：
+- [最新版本 (v2)](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2)
+- [v1](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1)
+- [v0](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v0)
 > - [最新版本](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v2)
 > - [v1](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v1)
 > - [v0](https://github.com/qzqzqdwww/Hackathon-S2/releases/tag/v0)

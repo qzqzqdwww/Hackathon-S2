@@ -5,6 +5,8 @@
     related sub-fields are filtered out) and rich surprise-factor variety.
 """
 
+import random
+
 DOMAINS = [
     # ── 人文科学 (Humanities) ──────────────────────────────
     "古典学 (Classics)",
@@ -209,8 +211,6 @@ def pick_domain(excluded: list[str]) -> dict:
     Excludes domains that match any excluded keyword (Chinese or English),
     then uses weighted random to favor domains that are semantically distant.
     """
-    import random
-
     excluded_lower = {kw.lower().strip() for kw in excluded if kw.strip()}
 
     candidates = []

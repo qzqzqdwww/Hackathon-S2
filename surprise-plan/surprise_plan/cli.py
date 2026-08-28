@@ -10,7 +10,6 @@ Usage:
     surprise-plan config clear              # Clear saved config
 """
 
-import os
 import random
 import sys
 import time
@@ -387,7 +386,6 @@ def _print_config():
 
 def _run_connection_test(cfg: dict):
     """Test API connectivity and display results."""
-    from rich.panel import Panel
     from .backend.provider import test_api_connection
 
     console.print(f"\n[dim]正在测试连接...[/dim]")
@@ -499,15 +497,16 @@ def _generate_demo_plan() -> dict:
 
     learning_path = []
     for week_num in range(1, 5):
-        week_activities = activities_pool[week_num * activities_per_week : (week_num + 1) * activities_per_week]
-        week_resources = resources_pool[week_num * resources_per_week : (week_num + 1) * resources_per_week]
         if week_num == 4:
-            theme = f"整合：{raw_name} 与你的兴趣交汇"
             week_activities = activities_pool[-activities_per_week:]
             week_resources = resources_pool[-resources_per_week:]
         else:
-            themes = [f"{raw_name} 基础入门", f"{raw_name} 核心概念", f"{raw_name} 进阶实践"]
-            theme = themes[week_num - 1]
+            week_activities = activities_pool[(week_num - 1) * activities_per_week : week_num * activities_per_week]
+            week_resources = resources_pool[(week_num - 1) * resources_per_week : week_num * resources_per_week]
+        theme = (
+            f"整合：{raw_name} 与你的兴趣交汇" if week_num == 4
+            else [f"{raw_name} 基础入门", f"{raw_name} 核心概念", f"{raw_name} 进阶实践"][week_num - 1]
+        )
         learning_path.append({
             "week": week_num,
             "theme": theme,

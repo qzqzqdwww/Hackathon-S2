@@ -85,7 +85,7 @@ class TestMainWithMockedAPI:
     def test_success(self, gen, pick, clear, anim, display):
         r = runner.invoke(app, ["main", "AI, 音乐"])
         assert r.exit_code == 0
-        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)", difficulty="2")
+        gen.assert_called_once_with(["AI", "音乐"], "真菌学 (Mycology)", difficulty="3")
         args = display.call_args[0][0]
         assert args["picked_domain"] == "真菌学 (Mycology)"
 

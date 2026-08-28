@@ -261,11 +261,11 @@ def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2
             )
 
     difficulty_map = {
-        "1": "轻松入门 — 用浅显有趣的方式讲解，少用专业术语，多用类比和故事",
-        "2": "标准 — 理论与实践平衡，适合自学",
-        "3": "深入挑战 — 硬核内容，大量实践项目，适合有基础的学习者",
+        "1": "平衡 — 理论与实践兼顾，适合自学",
+        "2": "深入 — 硬核内容，大量实践项目，适合有基础的学习者",
+        "3": "深入 — 硬核内容，大量实践项目，适合有基础的学习者",
     }
-    diff_note = difficulty_map.get(str(difficulty), difficulty_map["2"])
+    diff_note = difficulty_map.get(str(difficulty), difficulty_map["1"])
 
     max_retries = 2
     last_err = None

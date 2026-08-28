@@ -100,7 +100,7 @@ def _run(interests: list[str], animation: str, speed: float, regenerate: bool = 
         console.print(f"[dim]打破算法茧房 · 制造意外[/dim]")
         console.print()
         console.print(f"[green]你的兴趣: {', '.join(interests)}[/green]")
-        console.print(f"[yellow]难度: {'轻松入门' if difficulty == '1' else '深入挑战' if difficulty == '3' else '标准'}[/yellow]")
+        console.print(f"[yellow]难度: {'深入' if difficulty == '3' else '平衡'}[/yellow]")
         console.print()
         console.print(f"[dim]AI 引擎: {provider}[/dim]")
         console.print("[yellow]即将为你随机揭示一个陌生领域...[/yellow]")
@@ -165,7 +165,7 @@ def main(
     demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
     animation: str = typer.Option("default", "--animation", "-a", help="动画样式"),
     speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
-    difficulty: str = typer.Option("2", "--difficulty", "-d", help="难度: 1=轻松, 2=标准, 3=深入"),
+    difficulty: str = typer.Option("2", "--difficulty", "-d", help="难度: 1=平衡, 2=深入"),
     output: str = typer.Option(None, "--output", "-o", help="导出文件路径（.json / .md / .txt / .html）"),
 ):
     """[TARGET] Surprise-Plan — 打破算法茧房，随机生成学习计划"""
@@ -184,9 +184,12 @@ def main(
         console.print(f"可用: {', '.join(valid_anims)}")
         raise typer.Exit(1)
 
-    if difficulty not in ("1", "2", "3"):
-        console.print(f"[red]难度必须是 1、2 或 3[/red]")
+    if difficulty not in ("1", "2"):
+        console.print(f"[red]难度必须是 1（平衡）或 2（深入）[/red]")
         raise typer.Exit(1)
+
+    # Map user-facing 1/2 to internal 2/3
+    difficulty = {"1": "2", "2": "3"}[difficulty]
 
     _run(interest_list, animation, speed, demo_mode=demo, difficulty=difficulty, output=output)
 
@@ -550,15 +553,16 @@ def _interactive(default_anim: str = "default", demo: bool = False):
     console.print(f"[dim]输入你的兴趣领域，AI 会刻意避开它们[/dim]")
     console.print()
     console.print(f"[bold]难度选择:[/bold]")
-    console.print(f"  [green]1[/green]. 轻松入门 (浅显易懂，趣味为主)")
-    console.print(f"  [green]2[/green]. 标准 (平衡理论与实践)")
-    console.print(f"  [green]3[/green]. 深入挑战 (硬核内容，大量实践)")
+    console.print(f"  [green]1[/green]. 平衡 (理论与实践兼顾)")
+    console.print(f"  [green]2[/green]. 深入 (硬核内容，大量实践)")
 
-    difficulty = Prompt.ask(
+    difficulty_choice = Prompt.ask(
         f"\n[yellow]选择难度[/yellow]",
-        choices=["1", "2", "3"],
-        default="2",
+        choices=["1", "2"],
+        default="1",
     )
+    # Map user-facing 1/2 to internal 2/3
+    difficulty = {"1": "2", "2": "3"}[difficulty_choice]
 
     animation = default_anim
     raw = Prompt.ask(f"\n[green]你的兴趣领域[/green]（逗号分隔）", default="")

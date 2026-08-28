@@ -31,7 +31,21 @@ def export_plan(plan_data: dict, filepath: str) -> str:
     """
     fmt = detect_format(filepath)
     path = Path(filepath).expanduser().resolve()
-    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if path is a directory
+    if path.exists() and path.is_dir():
+        raise PermissionError(
+            f"'{path}' 是一个目录，不能作为文件写入。\n"
+            f"  请在文件名中指定扩展名，例如：{path / 'plan.md'}"
+        )
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        raise PermissionError(
+            f"无法创建目录 '{path.parent}'，请检查是否有写入权限。\n"
+            f"  提示：磁盘根目录（如 D:\\）通常需要管理员权限，建议写入用户目录。"
+        )
 
     plan = plan_data.get("plan", {})
     domain = plan.get("domain", plan_data.get("picked_domain", "?"))
@@ -56,8 +70,18 @@ def export_plan(plan_data: dict, filepath: str) -> str:
         content = _format_plain(domain, tagline, why, key_terms, fun_fact,
                                 connections, learning_path, surprise)
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+    except PermissionError:
+        raise PermissionError(
+            f"无法写入文件 '{path}'，权限被拒绝。\n"
+            f"  可能原因：\n"
+            f"  1. 目标位置需要管理员权限（如磁盘根目录 D:\\）\n"
+            f"  2. 文件被其他程序占用\n"
+            f"  3. 磁盘只读或已满\n"
+            f"  建议：写入用户目录，例如：{Path.home() / 'Documents' / 'plan.md'}"
+        )
 
     return str(path)
 

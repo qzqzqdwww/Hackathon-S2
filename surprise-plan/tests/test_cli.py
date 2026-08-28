@@ -232,6 +232,12 @@ class TestInteractiveMode:
         result = export_plan(data, str(out))
         assert out.exists()
 
+    def test_export_directory_path_raises(self, tmp_path):
+        from surprise_plan.backend.plan_exporter import export_plan
+        data = {"plan": {"domain": "test"}}
+        with pytest.raises(PermissionError, match="目录"):
+            export_plan(data, str(tmp_path))
+
     def test_export_html_escapes_special_chars(self, tmp_path):
         from surprise_plan.backend.plan_exporter import export_plan
         data = {

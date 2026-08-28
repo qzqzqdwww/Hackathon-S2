@@ -267,26 +267,46 @@ def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "2
     }
     diff_note = difficulty_map.get(str(difficulty), difficulty_map["2"])
 
-    seed = random.randint(1, 999999)
-    angle_hint = "奇数种子：从令人惊讶的历史轶事切入" if seed % 2 == 1 else "偶数种子：从令人惊讶的现代应用切入"
+    max_retries = 2
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        seed = random.randint(1, 999999)
+        angle_hint = "奇数种子：从令人惊讶的历史轶事切入" if seed % 2 == 1 else "偶数种子：从令人惊讶的现代应用切入"
 
-    user_message = (
-        f"[random_seed={seed}]\n"
-        f"My current interests are: {', '.join(interests)}.\n"
-        f"Surprise me with a learning plan for: {picked_domain}\n"
-        f"Difficulty level: {diff_note}\n"
-        f"Angle hint ({angle_hint})"
-    )
+        user_message = (
+            f"[random_seed={seed}]\n"
+            f"My current interests are: {', '.join(interests)}.\n"
+            f"Surprise me with a learning plan for: {picked_domain}\n"
+            f"Difficulty level: {diff_note}\n"
+            f"Angle hint ({angle_hint})"
+        )
 
-    try:
-        if provider == "anthropic":
-            content = _call_anthropic(api_key, model, user_message)
+        try:
+            if provider == "anthropic":
+                content = _call_anthropic(api_key, model, user_message)
+            else:
+                content = _call_openai_compatible(api_key, model, base_url, user_message)
+        except ValueError:
+            last_err = "empty"
+            if attempt < max_retries:
+                continue
+            raise ValueError(
+                "AI 返回了空内容，多次重试后仍然失败。\n"
+                "  可能原因：\n"
+                "  1. 模型 max_tokens 限制不足（当前模型：{}）\n"
+                "  2. API 限流或服务暂时不可用\n"
+                "  建议：\n"
+                "  - 尝试切换到更强的模型（如 gpt-4o-mini、deepseek-chat）\n"
+                "  - 运行 surprise-plan config set 更换模型\n"
+                "  - 稍后再试".format(model)
+            )
+        except Exception as e:
+            last_err = str(e)
+            if attempt < max_retries:
+                continue
+            raise RuntimeError(f"AI 调用失败 [{provider}]: {last_err}") from e
         else:
-            content = _call_openai_compatible(api_key, model, base_url, user_message)
-    except ValueError:
-        raise
-    except Exception as e:
-        raise RuntimeError(f"AI 调用失败 [{provider}]: {e}") from e
+            break  # success
 
     try:
         return json.loads(_strip_markdown_fences(content))

@@ -30,6 +30,9 @@ Surprise-Plan 是一个终端原生 CLI 工具。你输入自己的兴趣领域�
 ```bash
 # 克隆项目
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
+
+# 如果 HTTPS 连接失败，可尝试 SSH
+git clone git@github.com:qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
 # 安装
@@ -271,6 +274,7 @@ v1 直接回答了"Token消耗少、生成内容少、用户无互动"的反馈�
 ```bash
 # 最新版本（包含所有功能）
 git clone https://github.com/qzqzqdwww/Hackathon-S2.git
+# 或 SSH: git clone git@github.com:qzqzqdwww/Hackathon-S2.git
 cd Hackathon-S2/surprise-plan
 
 # 在已克隆的仓库中切换版本

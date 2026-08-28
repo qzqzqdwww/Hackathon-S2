@@ -153,6 +153,8 @@ class TestInteractiveMode:
         assert ".md" in r.output
         assert ".txt" in r.output
         assert ".html" in r.output
+        # Verify example hint is shown
+        assert "示例" in r.output
 
     @patch("surprise_plan.cli.generate_plan", return_value=_plan())
     @patch("surprise_plan.cli.pick_domain", return_value=_pick())

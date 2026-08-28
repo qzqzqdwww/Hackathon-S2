@@ -618,6 +618,10 @@ def _interactive(default_anim: str = "default", demo: bool = False):
                 f"[cyan].txt[/cyan] 纯文本  ·  "
                 f"[cyan].html[/cyan] 网页（带样式）"
             )
+            console.print(
+                f"[dim]示例: [cyan]C:\\Users\\Q\\Documents\\plan.md[/cyan] "
+                f"或 [cyan]~/Desktop/plan.html[/cyan][/dim]"
+            )
             filepath = Prompt.ask(
                 f"[green]导出文件路径[/green]",
                 default="plan.md",

@@ -86,7 +86,24 @@ surprise-plan --list-animations
 | `c` | 修改兴趣领域 |
 | `q` | 退出 |
 
----
+### 导出 PLAN
+
+交互模式中按 `e` 键导出，系统会提示格式和路径示例：
+
+```
+e 导出
+
+导出格式: .json 结构化数据 · .md Markdown · .txt 纯文本 · .html 网页（带样式）
+示例: C:\Users\Q\Documents\plan.md 或 ~/Desktop/plan.html
+导出文件路径 [plan.md]:
+```
+
+命令行直接导出：
+
+```bash
+surprise-plan main --output ~/Documents/plan.md "AI, 音乐"
+surprise-plan main --output plan.json "AI, 音乐"
+```
 
 ## 运行测试
 

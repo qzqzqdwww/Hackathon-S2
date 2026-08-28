@@ -94,7 +94,7 @@ surprise-plan --list-animations
 e 导出
 
 导出格式: .json 结构化数据 · .md Markdown · .txt 纯文本 · .html 网页（带样式）
-示例: C:\Users\Q\Documents\plan.md 或 ~/Desktop/plan.html
+示例: Documents\plan.md 或 Desktop\plan.html
 导出文件路径 [plan.md]:
 ```
 

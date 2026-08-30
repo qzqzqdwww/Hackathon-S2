@@ -209,7 +209,17 @@ _FENCE_RE = re.compile(r'(?s)^.*?```(?:json)?\s*\n?|\n?\s*```.*')
 
 def _strip_markdown_fences(content: str) -> str:
     """Strip markdown code fences and any surrounding preamble/epilogue from LLM response."""
-    return _FENCE_RE.sub('', content).strip()
+    stripped = _FENCE_RE.sub('', content).strip()
+
+    # Fallback: extract JSON by finding the outermost { ... } or [ ... ] block.
+    # This handles cases where the model added text around the JSON without fences.
+    for opener, closer in [('{', '}'), ('[', ']')]:
+        start = stripped.find(opener)
+        end = stripped.rfind(closer)
+        if start != -1 and end != -1 and end > start:
+            return stripped[start:end + 1]
+
+    return stripped
 
 
 def get_current_provider() -> str:

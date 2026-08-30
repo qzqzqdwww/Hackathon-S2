@@ -242,3 +242,19 @@ class TestStripMarkdownFences:
     def test_strips_fence_with_preamble_no_lang(self):
         raw = "Sure! Here you go:\n```\n{\"a\": 1}\n```"
         assert _strip_markdown_fences(raw) == '{"a": 1}'
+
+    def test_extracts_json_from_preamble_text(self):
+        raw = "Here is the plan:\n{\"domain\": \"test\", \"key\": \"value\"}\nEnjoy!"
+        assert _strip_markdown_fences(raw) == '{"domain": "test", "key": "value"}'
+
+    def test_extracts_json_from_trailing_text(self):
+        raw = '{"a": 1}\nHope this helps!'
+        assert _strip_markdown_fences(raw) == '{"a": 1}'
+
+    def test_extracts_json_from_surrounding_text(self):
+        raw = "Sure!\n{\"x\": 42}\nDone."
+        assert _strip_markdown_fences(raw) == '{"x": 42}'
+
+    def test_no_json_returns_original(self):
+        raw = "No JSON here, just text"
+        assert _strip_markdown_fences(raw) == raw

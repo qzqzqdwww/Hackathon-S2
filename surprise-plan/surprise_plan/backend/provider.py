@@ -211,15 +211,48 @@ def _strip_markdown_fences(content: str) -> str:
     """Strip markdown code fences and any surrounding preamble/epilogue from LLM response."""
     stripped = _FENCE_RE.sub('', content).strip()
 
-    # Fallback: extract JSON by finding the outermost { ... } or [ ... ] block.
-    # This handles cases where the model added text around the JSON without fences.
-    for opener, closer in [('{', '}'), ('[', ']')]:
-        start = stripped.find(opener)
-        end = stripped.rfind(closer)
-        if start != -1 and end != -1 and end > start:
-            return stripped[start:end + 1]
+    # Fallback: extract JSON by finding the outermost balanced { ... } block.
+    # Handles cases where the model added text around the JSON without fences.
+    result = _extract_balanced(stripped, '{', '}')
+    if result is not None:
+        return result
+
+    # Try array form [ ... ] as a last resort
+    result = _extract_balanced(stripped, '[', ']')
+    if result is not None:
+        return result
 
     return stripped
+
+
+def _extract_balanced(text: str, open_c: str, close_c: str) -> str | None:
+    """Find the first balanced pair of open_c / close_c and return the slice."""
+    start = text.find(open_c)
+    if start == -1:
+        return None
+    depth = 0
+    in_string = False
+    escape_next = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == open_c:
+            depth += 1
+        elif ch == close_c:
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
 
 
 def get_current_provider() -> str:

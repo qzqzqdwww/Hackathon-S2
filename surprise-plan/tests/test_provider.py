@@ -258,3 +258,11 @@ class TestStripMarkdownFences:
     def test_no_json_returns_original(self):
         raw = "No JSON here, just text"
         assert _strip_markdown_fences(raw) == raw
+
+    def test_nested_json_balanced_extraction(self):
+        raw = 'Some text before {"outer": {"inner": "value"}} some text after'
+        assert _strip_markdown_fences(raw) == '{"outer": {"inner": "value"}}'
+
+    def test_json_with_string_containing_braces(self):
+        raw = 'Here you go: {"msg": "use { and } in your code"} thanks'
+        assert _strip_markdown_fences(raw) == '{"msg": "use { and } in your code"}'

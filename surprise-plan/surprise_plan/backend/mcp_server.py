@@ -31,7 +31,7 @@ from typing import Any
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "surprise-plan"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
 
 TOOLS = [
     {
@@ -83,8 +83,8 @@ async def handle_tools_list(req_id: Any, params: dict) -> dict:
     return _make_response(req_id, {"tools": TOOLS})
 
 
-from ..backend.provider import generate_plan
-from ..backend.domain_picker import pick_domain
+from .provider import generate_plan
+from .domain_picker import pick_domain
 
 
 async def handle_tools_call(req_id: Any, params: dict) -> dict:

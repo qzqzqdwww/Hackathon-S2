@@ -240,7 +240,7 @@ def _extract_balanced(text: str, open_c: str, close_c: str) -> str | None:
             continue
         if ch == '\\' and in_string:
             escape_next = True
-            continue
+            # Do NOT continue — let the next iteration consume the escaped char
         if ch == '"':
             in_string = not in_string
             continue
@@ -353,4 +353,9 @@ def generate_plan(interests: list[str], picked_domain: str, difficulty: str = "1
     try:
         return json.loads(_strip_markdown_fences(content))
     except json.JSONDecodeError:
-        raise ValueError("AI 返回的内容无法解析为 JSON，请重试或更换模型。")
+        preview = content[:300] + ("..." if len(content) > 300 else "")
+        raise ValueError(
+            "AI 返回的内容无法解析为 JSON。\n"
+            f"  原始内容（前300字）: {preview}\n"
+            "  建议：更换模型或重试。"
+        )

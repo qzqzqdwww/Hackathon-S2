@@ -266,3 +266,11 @@ class TestStripMarkdownFences:
     def test_json_with_string_containing_braces(self):
         raw = 'Here you go: {"msg": "use { and } in your code"} thanks'
         assert _strip_markdown_fences(raw) == '{"msg": "use { and } in your code"}'
+
+    def test_json_with_escaped_quotes_inside_string(self):
+        raw = '{"msg": "He said \\"hello\\" to me"}'
+        assert _strip_markdown_fences(raw) == '{"msg": "He said \\"hello\\" to me"}'
+
+    def test_json_with_escaped_braces_inside_string(self):
+        raw = '{"pattern": "\\\\{key\\\\}"}'
+        assert _strip_markdown_fences(raw) == '{"pattern": "\\\\{key\\\\}"}'

@@ -62,6 +62,8 @@ def default(
     ctx: typer.Context,
     list_domains: bool = typer.Option(False, "--list-domains", help="列出所有可选领域池"),
     list_animations: bool = typer.Option(False, "--list-animations", help="列出所有可用动画样式"),
+    demo: bool = typer.Option(False, "--demo", help="演示模式（无需 API Key）"),
+    speed: float = typer.Option(1.0, "--speed", "-s", help="动画速度倍率"),
 ):
     """Default entry point: interactive mode when no subcommand given."""
     if ctx.invoked_subcommand is not None:
@@ -70,7 +72,7 @@ def default(
         show_list_domains()
     if list_animations:
         show_list_animations()
-    _interactive()
+    _interactive(demo=demo, speed=speed)
 
 
 # ─── Core workflow ─────────────────────────────────────────
@@ -113,7 +115,7 @@ def _run(interests: list[str], animation: str, speed: float, regenerate: bool = 
 
     try:
         if demo_mode:
-            plan = _generate_demo_plan()
+            plan = _generate_demo_plan(interests)
         else:
             plan = generate_plan(interests, pick["domain"], difficulty=difficulty)
     except EnvironmentError as e:
@@ -476,9 +478,11 @@ _DEMO_TEMPLATES = {
 }
 
 
-def _generate_demo_plan() -> dict:
+def _generate_demo_plan(excluded: list[str] = None) -> dict:
     """Generate a random demo plan without calling any API."""
-    domain = random.choice(DOMAINS)
+    excluded = excluded or []
+    pick = pick_domain(excluded)
+    domain = pick["domain"]
     raw_name = domain.split("(")[0].strip()
     activities_pool = list(_DEMO_TEMPLATES["activities"])
     resources_pool = list(_DEMO_TEMPLATES["resources"])
@@ -544,7 +548,7 @@ def _generate_demo_plan() -> dict:
 
 # ─── Interactive REPL ──────────────────────────────────────
 
-def _interactive(default_anim: str = "default", demo: bool = False):
+def _interactive(default_anim: str = "default", demo: bool = False, speed: float = 1.0):
     """Interactive REPL mode."""
     clear_screen()
     console.print(f"\n[bold yellow][TARGET] Surprise-Plan[/bold yellow]")
@@ -578,7 +582,7 @@ def _interactive(default_anim: str = "default", demo: bool = False):
         animation = anim_choice
 
     # First plan generation
-    last_pick, last_plan = _run(interests, animation, 1.0, demo_mode=demo, difficulty=difficulty)
+    last_pick, last_plan = _run(interests, animation, speed, demo_mode=demo, difficulty=difficulty)
 
     while True:
         console.print()
@@ -602,6 +606,8 @@ def _interactive(default_anim: str = "default", demo: bool = False):
             )
             if anim_choice in {"default", "lightning", "chain", "laser"}:
                 animation = anim_choice
+            else:
+                console.print(f"[red]未知动画: {anim_choice}，保持当前样式 ({animation})[/red]")
         elif action == "d":
             _dive_deeper(interests, difficulty=difficulty, demo_mode=demo)
             continue
@@ -638,10 +644,8 @@ def _interactive(default_anim: str = "default", demo: bool = False):
                 except Exception as ex:
                     console.print(f"\n[red]导出失败: {ex}[/red]")
             continue
-        elif action == "":
-            pass  # Enter = regenerate with new domain
 
-        last_pick, last_plan = _run(interests, animation, 1.0, regenerate=True, demo_mode=demo, difficulty=difficulty)
+        last_pick, last_plan = _run(interests, animation, speed, regenerate=True, demo_mode=demo, difficulty=difficulty)
 
 
 def _dive_deeper(interests: list[str], difficulty: str = "1", demo_mode: bool = False):
@@ -659,7 +663,7 @@ def _dive_deeper(interests: list[str], difficulty: str = "1", demo_mode: bool = 
 
     try:
         if demo_mode:
-            plan = _generate_demo_plan()
+            plan = _generate_demo_plan(interests)
         else:
             plan = generate_plan(interests, topic, difficulty=difficulty)
     except Exception as e:
